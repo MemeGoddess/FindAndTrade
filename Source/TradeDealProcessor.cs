@@ -247,13 +247,12 @@ namespace MGAutoSell
 
                     sellDictionary[tradeable] += count;
                 }
+
                 var toBuy =
                     rule.AllowBuy
                         ? items
                             .Where(x =>
-                                rule.BuyWhenBelow == 0
-                                    ? GetCount(rule, x.ThingDef) + countsOnMap.TryGetValue(x.ThingDef, 0) < rule.BuyUpTo
-                                    : GetCount(rule, x.ThingDef) + countsOnMap.TryGetValue(x.ThingDef, 0) < rule.BuyWhenBelow)
+                                GetCount(rule, x.ThingDef) + countsOnMap.TryGetValue(x.ThingDef, 0) < rule.BuyUpTo)
                             .ToList()
                         : [];
                 toBuy.ForEach(x => itemCache.Remove(x.Tradeable));

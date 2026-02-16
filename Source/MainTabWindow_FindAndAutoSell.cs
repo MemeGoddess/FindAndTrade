@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -39,9 +40,13 @@ namespace MGAutoSell
         }
 
         Vector2 listerScroll = Vector2.zero;
+        Vector2 BuyingSize = Text.CalcSize("Buying"), SellingSize = Text.CalcSize("Selling");
+        private long previousRenderTime = 0;
         public override void DoWindowContents(Rect inRect)
         {
-            var listing = new Listing_Standard(inRect, () => _scroll);
+            var timestamp = Stopwatch.GetTimestamp();
+
+            var listing = new Listing_Standard();
             listing.Begin(inRect);
 
             var drawerListing = new Listing_StandardIndent();
@@ -55,16 +60,17 @@ namespace MGAutoSell
                 CreateRule();
 
             var rect = topRect.LeftHalf();
-            drawerListing.BeginScrollView(rect, ref listerScroll, rect.LeftPartPixels(rect.width - 16).AtZero());
-            var header = drawerListing.GetRect(30f);
-            Widgets.Label(header.LeftHalf(), "Find and (Auto) Sell");
+            var header = rect.TopPartPixels(30).LeftPartPixels(rect.width - 16);
+            var body = rect.MiddlePartPixels(rect.width, rect.height - 60);
+            Widgets.Label(header.LeftHalf(), $"Find and (Auto) Sell ({previousRenderTime}ts)");
 
-            var middle = 34;
+            var middle = 30;
             var left = header.RightHalf().LeftHalf();
-            left.x += middle - (Text.CalcSize("Selling").x / 2);
+            left.x += middle - (SellingSize.x / 2);
             Widgets.Label(left, "Selling");
-            Widgets.Label(header.RightPartPixels(middle + Text.CalcSize("Buying").x / 2), "Buying");
-            
+            Widgets.Label(header.RightPartPixels(middle + BuyingSize.x / 2), "Buying");
+
+            drawerListing.BeginScrollView(body, ref listerScroll, body.LeftPartPixels(body.width - 16).TopPartPixels(comp.tradeRules.Count * 30).AtZero());
             drawer.DrawQuerySearchList(drawerListing);
             drawerListing.EndScrollView(ref height);
             listing.GapLine();
@@ -76,6 +82,7 @@ namespace MGAutoSell
                 editor.DoWindowContents(editRect);
             }
             listing.End();
+            previousRenderTime = Stopwatch.GetTimestamp() - timestamp;
         }
 
         public TradeRule SelectedTradeRule;
@@ -93,8 +100,6 @@ namespace MGAutoSell
                 editor = new TradeRuleEditor(tradeRule);
                 SelectedTradeRule = tradeRule;
             }
-
-            
         }
 
         public void CreateRule()
