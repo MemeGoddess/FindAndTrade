@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using RimWorld;
 using TD_Find_Lib;
 using UnityEngine;
 using Verse;
+using static HarmonyLib.Code;
 
 namespace MGAutoSell
 {
@@ -17,6 +20,13 @@ namespace MGAutoSell
         private Vector2 _scroll = Vector2.zero;
 
         private TradeRulesGameComp comp;
+        private TradeRuleEditor editor;
+
+        private List<SellEntry> sellEntries = new();
+        private float totalSellEntryPrice = 0;
+        private long nextCache = 0;
+        private long nextQuickCache = 0;
+        public bool SellListDirty => comp.tradeRules.Any(y => y.search.changed);
 
         public MainTabWindow_FindAndAutoSell()
         {
@@ -40,7 +50,7 @@ namespace MGAutoSell
         }
 
         Vector2 listerScroll = Vector2.zero;
-        Vector2 BuyingSize = Text.CalcSize("Buying"), SellingSize = Text.CalcSize("Selling");
+        Vector2 BuyingSize = Text.CalcSize("Buy Until"), SellingSize = Text.CalcSize("Sell Until");
         private long previousRenderTime = 0;
         public override void DoWindowContents(Rect inRect)
         {
@@ -67,8 +77,8 @@ namespace MGAutoSell
             var middle = 30;
             var left = header.RightHalf().LeftHalf();
             left.x += middle - (SellingSize.x / 2);
-            Widgets.Label(left, "Selling");
-            Widgets.Label(header.RightPartPixels(middle + BuyingSize.x / 2), "Buying");
+            Widgets.Label(left, "Sell Until");
+            Widgets.Label(header.RightPartPixels(middle + BuyingSize.x / 2), "Buy Until");
 
             drawerListing.BeginScrollView(body, ref listerScroll, body.LeftPartPixels(body.width - 16).TopPartPixels(comp.tradeRules.Count * 30).AtZero());
             drawer.DrawQuerySearchList(drawerListing);
@@ -81,8 +91,123 @@ namespace MGAutoSell
                 
                 editor.DoWindowContents(editRect);
             }
+
+            var bottom = listing.GetRect(inRect.height - listing.CurHeight);
+
+            var toSellRect = bottom.LeftHalf();
+            CacheItemsToSell();
+
+            int i = 0;
+            foreach (var (thingDef, count, total) in sellEntries)
+            {
+                toSellRect.SplitHorizontally(30f, out var row, out toSellRect);
+
+                if (i % 2 == 1)
+                    Widgets.DrawLightHighlight(row);
+                i++;
+
+                GUI.DrawTexture(row.LeftPartPixels(30), thingDef.uiIcon);
+                row.x += 40;
+                Widgets.Label(row, thingDef.GetLabel() + $" ({count})");
+                row.x -= 40;
+                var totalLabel = Math.Round(total, 0).ToStringSafe();
+                var size = Text.CalcSize(totalLabel);
+                Widgets.Label(row.RightPartPixels(size.x + 4), totalLabel);
+            }
+
+            var footer = toSellRect.BottomPartPixels(Text.LineHeight);
+            Widgets.DrawLightHighlight(footer);
+            Widgets.Label(footer, "Total:");
+
+            var footerRow = new WidgetRow(footer.xMax - 4, footer.y, UIDirection.LeftThenDown);
+            footerRow.Label(totalSellEntryPrice.ToStringSafe());
+            footerRow.Icon(ThingDefOf.Silver.uiIcon);
+
             listing.End();
             previousRenderTime = Stopwatch.GetTimestamp() - timestamp;
+        }
+
+        public void CacheItemsToSell(bool force = false)
+        {
+            var shouldUpdate = force || (SellListDirty && nextQuickCache < DateTime.UtcNow.Ticks) ||
+                               nextCache < Find.TickManager.TicksGame;
+
+            if (!shouldUpdate)
+                return;
+
+            var timestamp = Stopwatch.GetTimestamp();
+            var allItems = TradeUtility.AllLaunchableThingsForTrade(Find.CurrentMap).ToList();
+            var sellDictionary = new Dictionary<ThingDef, int>();
+            var thingDictionary = new Dictionary<ThingDef, List<Thing>>();
+
+            var junk = allItems.Where(x => x.Map.designationManager.DesignationOn(x, MGDesignatorDefOf.MGAutoSell) != null).ToList();
+            junk.ForEach(x => allItems.Remove(x));
+            var junkGrouped = junk.GroupBy(x => x.def).ToList();
+
+            thingDictionary.AddRange(junkGrouped.ToDictionary(x => x.Key,
+                x => x.ToList()));
+
+            foreach (var rule in comp.tradeRules.Where(x => x.Enabled && x.AllowSell && x.search.Children.queries.Any()))
+            {
+                var items = allItems.Where(x => rule.search.AppliesTo(x)).ToList();
+
+                items.ForEach(x =>
+                {
+                    allItems.Remove(x);
+                });
+
+                var itemsGrouped = items
+                    .GroupBy(x => x.def).ToList();
+
+                foreach (var (thingDef, list) in itemsGrouped.ToDictionary(x => x.Key, x => x.ToList()))
+                {
+                    if(!thingDictionary.TryAdd(thingDef, list))
+                        thingDictionary[thingDef].AddRange(list);
+
+                    sellDictionary.Add(thingDef, rule.SellDownTo);
+                }
+            }
+
+            var stat = StatDefOf.TradePriceImprovement;
+            var socialPawn = Find.CurrentMap.mapPawns.PawnsInFaction(Faction.OfPlayer)
+                .Where(x => !stat.Worker.IsDisabledFor(x))
+                .MaxBy(x => x.GetStatValue(stat));
+
+            var traderPriceType = PriceType.Normal.PriceMultiplier();
+            var playerNegotiator = socialPawn.GetStatValue(StatDefOf.TradePriceImprovement);
+            var settlement = socialPawn.TradePriceImprovementOffsetForPlayer;
+            var drugBonus = socialPawn.GetStatValue(StatDefOf.DrugSellPriceImprovement);
+            var animalProduceBonus = socialPawn.GetStatValue(StatDefOf.AnimalProductsSellImprovement);
+            thingDictionary.RemoveAll(x => !x.Value.Any());
+            sellEntries = thingDictionary.Select(x =>
+            {
+                var (thingDef, items) = x;
+                var humanPawn = items.FirstOrDefault() is Pawn pawn && pawn.RaceProps.Humanlike ? 0.6f : 1f;
+                var priceTotal = items.Select(y => TradeUtility.GetPricePlayerSell(y, traderPriceType, humanPawn, playerNegotiator, settlement, drugBonus, animalProduceBonus) * y.stackCount).Sum();
+                var itemsTotal = items.Sum(x => x.stackCount);
+                var pricePer = priceTotal / itemsTotal;
+                var sellDown = sellDictionary.TryGetValue(thingDef);
+
+                if (itemsTotal <= sellDown)
+                    return null;
+
+                priceTotal -= pricePer * sellDown;
+                itemsTotal -= sellDown;
+
+                return new SellEntry(thingDef, itemsTotal, (float)Math.Round(priceTotal, 0));
+            })
+            .Where(x => x != null)
+            .OrderByDescending(x => x.Total)
+            .ToList();
+
+            totalSellEntryPrice = (float)Math.Round(sellEntries.Sum(x => x.Total), 0);
+
+            nextCache = Find.TickManager.TicksGame + 3600;
+            nextQuickCache = DateTime.UtcNow.AddSeconds(1).Ticks;
+
+            var duration = Stopwatch.GetTimestamp() - timestamp;
+            Log.Message($"Generated list in {duration}ts");
+            comp.tradeRules.ForEach(x => x.search.changed = false);
         }
 
         public TradeRule SelectedTradeRule;
@@ -109,21 +234,12 @@ namespace MGAutoSell
                     TradeRule tradeRule = new(n);
                     comp.tradeRules.Add(tradeRule);
 
-                    EditRule(tradeRule);
+                    editor = new TradeRuleEditor(tradeRule);
                 },
                 "TD.NameForNewAlert".Translate(),
                 name => comp.tradeRules.Any(x => name == x.Search.name)));
         }
-
-        private TradeRuleEditor editor;
-        public void EditRule(TradeRule tradeRule)
-        {
-            editor = new TradeRuleEditor(tradeRule);
-
-            //Find.WindowStack.Add(editor);
-            //editor.windowRect.x = Window.StandardMargin;
-            //editor.windowRect.y = windowRect.yMin / 3;
-            //editor.windowRect.yMax = windowRect.yMin;
-        }
     }
+
+    public record SellEntry(ThingDef Item, int Count, float Total);
 }

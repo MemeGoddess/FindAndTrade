@@ -16,6 +16,12 @@ namespace MGAutoSell
 {
     public record TradeEntry(Tradeable Tradeable, ThingDef ThingDef, int ColonyCount, int TraderCount);
 
+    public record SellItem(Tradeable Tradeable, int Count)
+    {
+        public Tradeable Tradeable { get; set; } = Tradeable;
+        public int Count { get; set; } = Count;
+    }
+
     [StaticConstructorOnStartup]
     public static class TradeDealProcessor
     {
@@ -215,7 +221,7 @@ namespace MGAutoSell
             performanceTracker.Checkpoint("Junk");
 #endif
             var pairings = new Dictionary<ThingDef, TradeRule>();
-            foreach (var rule in autoTrade.tradeRules.Where(x => x.Enabled))
+            foreach (var rule in autoTrade.tradeRules.Where(x => x.Enabled && x.search.Children.queries.Any()))
             {
                 var items = itemCache
                     .Where(x => !x.IsCurrency && rule.search.AppliesTo(x.AnyThing))
@@ -288,7 +294,7 @@ namespace MGAutoSell
             performanceTracker.Checkpoint("Set trade");
 #endif
             // Buying too much
-            var buyReversed = buyDictionary.Select(x => (x.Key, x.Value)).ToList();
+            var buyReversed = buyDictionary.Select(x => new SellItem(x.Key, x.Value)).ToList();
             buyReversed.Reverse();
             while (deal.CurrencyTradeable.CountToTransfer < 0 && deal.CurrencyTradeable.CountToTransfer * -1 > deal.CurrencyTradeable.CountHeldBy(Transactor.Colony))
             {
@@ -302,7 +308,7 @@ namespace MGAutoSell
 #endif
 
             // Selling too much
-            var sellReversed = sellDictionary.Select(x => (x.Key, x.Value)).ToList();
+            var sellReversed = sellDictionary.Select(x => new SellItem(x.Key, x.Value)).ToList();
             sellReversed.Reverse();
             while (deal.CurrencyTradeable.CountToTransfer > deal.CurrencyTradeable.CountHeldBy(Transactor.Trader))
             {
@@ -324,7 +330,7 @@ namespace MGAutoSell
 #endif
         }
 
-        private static void NormalizeWith(this TradeDeal deal, List<(Tradeable Tradeable, int Count)> list, Dictionary<ThingDef, TradeRule> pairings, int gap)
+        private static void NormalizeWith(this TradeDeal deal, List<SellItem> list, Dictionary<ThingDef, TradeRule> pairings, int gap)
         {
             var item = list.FirstOrDefault();
             var cost = Math.Max(item.Tradeable.CurTotalCurrencyCostForSource,
@@ -338,9 +344,9 @@ namespace MGAutoSell
             else
             {
                 var costPer = cost / item.Tradeable.CountToTransfer;
-                var count = item.Count;
-                item.Count = item.Tradeable.CountToTransfer - (int)Math.Round(gap / costPer, 0);
-                AddCount(pairings.TryGetValue(item.Tradeable.ThingDef), item.Tradeable.ThingDef, count - Math.Abs(item.Count));
+                var reduction = (int)(item.Tradeable.CountToTransfer < 0 ? Math.Floor(gap / costPer) : Math.Ceiling(gap / costPer));
+                item.Count = item.Tradeable.CountToTransfer - reduction;
+                AddCount(pairings.TryGetValue(item.Tradeable.ThingDef), item.Tradeable.ThingDef, -reduction);
                 SetTradeCount(item.Tradeable, item.Count);
             }
             deal.UpdateCurrencyCount();
