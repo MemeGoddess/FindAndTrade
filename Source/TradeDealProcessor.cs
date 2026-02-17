@@ -310,7 +310,8 @@ namespace MGAutoSell
                         Math.Min(GetCount(rule, x.ThingDef) - rule.SellDownTo, x.ColonyCount));
                     AddCount(rule, x.ThingDef, -sellOrder.Item2);
                     return sellOrder;
-                });
+                }).ToList();
+
 
                 foreach (var (tradeable, count) in sellOrders)
                 {
@@ -335,7 +336,7 @@ namespace MGAutoSell
                     var buyOrder = (x.Tradeable, Math.Min(rule.BuyUpTo - GetCount(rule, x.ThingDef), x.TraderCount));
                     AddCount(rule, x.ThingDef, buyOrder.Item2);
                     return buyOrder;
-                });
+                }).ToList();
 
                 foreach (var (tradeable, count) in buyOrders)
                 {
@@ -344,6 +345,13 @@ namespace MGAutoSell
 
                     buyDictionary[tradeable] += count;
                 }
+
+                items
+                    .Where(trade =>
+                    sellOrders.All(x => x.Tradeable != trade.Tradeable) &&
+                    buyOrders.All(x => x.Tradeable != trade.Tradeable))
+                    .ToList()
+                    .ForEach(x => AddRuleLabelsToTradeUI.ExtraLabels.Remove(x.Tradeable));
 #if DEBUG
                 performanceTracker.Checkpoint($"Trade Rule - {rule.search.Name}");
 #endif
