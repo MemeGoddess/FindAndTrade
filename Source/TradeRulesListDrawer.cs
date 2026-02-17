@@ -26,7 +26,8 @@ namespace MGAutoSell
         private string editThiSearch = "TD.EditThisSearch".Translate();
         public override void DrawRowButtons(WidgetRow row, TradeRule item, int i)
         {
-            row.Checkbox(ref item.Enabled);
+            if(row.Checkbox(ref item.Enabled))
+                item.search.Changed();
 
             if (row.ButtonIcon(FindTex.Edit, editThiSearch))
                 _parent.DoEdit(item);
@@ -52,25 +53,44 @@ namespace MGAutoSell
             sellDownToRect.height -= 4;
             sellDownToRect.y += 3;
 
+            var prevSellDown = item.SellDownTo;
             string sellDownToBuffer = null;
             if (!item.AllowSell)
                 GUI.color = fadedColor;
             Widgets.TextFieldNumeric(sellDownToRect, ref item.SellDownTo, ref sellDownToBuffer);
+            if (string.IsNullOrWhiteSpace(sellDownToBuffer))
+                item.SellDownTo = 0;
             GUI.color = color;
+            if (item.SellDownTo != prevSellDown)
+                item.search.changed = true;
 
-            var rowBuyRect1 = rowRect.RightHalf();
-            var rowBuy1 = new WidgetRow(rowBuyRect1.x + 20, rowBuyRect1.y, UIDirection.RightThenDown);
+            var rowBuyRect = rowRect.RightHalf();
+            rowBuyRect = rowBuyRect.RightPartPixels(rowBuyRect.width - 20);
 
-            var buyUpToRect1 = rowBuy1.GetRect(60);
-            buyUpToRect1.height -= 4;
-            buyUpToRect1.y += 3;
+            if ((_parent.sellCache?.Rules?.TryGetValue(item, out var entry) ?? false) && entry.Any())
+            {
+                var iconRect = rowBuyRect.MiddlePartPixels(Text.LineHeight, Text.LineHeight);
+                GUI.color = fadedColor;
+                var length = entry.Count;
+                var index = (int)(DateTimeOffset.Now.ToUnixTimeSeconds() % length);
+                GUI.DrawTexture(iconRect, entry[index].Item.uiIcon);
+                GUI.color = color;
+            }
 
-            string buyUpToBuffer1 = null;
+            var rowBuy = new WidgetRow(rowBuyRect.x, rowBuyRect.y, UIDirection.RightThenDown);
+
+            var buyUpToRect = rowBuy.GetRect(60);
+            buyUpToRect.height -= 4;
+            buyUpToRect.y += 3;
+
+            string buyUpToBuffer = null;
             if (!item.AllowBuy)
             {
                 GUI.color = fadedColor;
             }
-            Widgets.TextFieldNumeric(buyUpToRect1, ref item.BuyUpTo, ref buyUpToBuffer1);
+            Widgets.TextFieldNumeric(buyUpToRect, ref item.BuyUpTo, ref buyUpToBuffer);
+            if(string.IsNullOrWhiteSpace(buyUpToBuffer))
+                item.BuyUpTo = 0;
             GUI.color = color;
             Text.CurTextFieldStyle.alignment = alignment;
         }

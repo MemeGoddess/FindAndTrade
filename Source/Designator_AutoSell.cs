@@ -4,12 +4,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using HarmonyLib;
 using UnityEngine;
 using Verse;
 using Verse.AI;
 
 namespace MGAutoSell
 {
+    [HarmonyPatch(typeof(ReverseDesignatorDatabase), "InitDesignators")]
     public class Designator_AutoSell : Designator
     {
         public override bool DragDrawMeasurements => true;
@@ -62,10 +64,21 @@ namespace MGAutoSell
 
         public override void SelectedUpdate() => GenUI.RenderMouseoverBracket();
 
+        [HarmonyPostfix]
+        public static void AddDesignatorToDatabase(ReverseDesignatorDatabase __instance)
+        {
+            __instance.AllDesignators.Add(new Designator_AutoSell());
+        }
+    }
+
+
+    public static class AddDesignator_AutoSell
+    {
+        
     }
 
     [DefOf]
-    public class MGDesignatorDefOf
+    public static class MGDesignatorDefOf
     {
         public static DesignationDef MGAutoSell;
     }
