@@ -1,0 +1,13 @@
+<Defs>
+    <TD_Find_Lib.ThingQueryCategoryDef>
+        <defName>MGAutoSell_ThingQueryCategory</defName>
+        <label>Trade</label>
+        <subQueries>
+
+        </subQueries>
+    </TD_Find_Lib.ThingQueryCategoryDef>
+
+    <TD_Find_Lib.ThingQueryDef>
+
+    </TD_Find_Lib.ThingQueryDef>
+</Defs>
