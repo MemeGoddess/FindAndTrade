@@ -1,13 +1,7 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.Remoting.Messaging;
-using System.Text;
-using System.Threading.Tasks;
 using HarmonyLib;
 using LudeonTK;
 using RimWorld;
@@ -15,8 +9,6 @@ using TD_Find_Lib;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Verse;
-using Verse.Noise;
-using static HarmonyLib.Code;
 
 namespace MGAutoSell
 {
@@ -48,7 +40,6 @@ namespace MGAutoSell
 
         Vector2 listerScroll = Vector2.zero;
         Vector2 settingScroll = Vector2.zero;
-        Vector2? SellingSize, BuyingSize;
         private string previousRenderTime;
 
         private string title = $"<i>{"MGAutoSell.Title".Translate()}</i>";
