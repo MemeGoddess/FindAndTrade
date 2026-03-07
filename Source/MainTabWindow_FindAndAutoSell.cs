@@ -135,7 +135,7 @@ namespace MGAutoSell
                     break;
             }
 
-            CacheItemsToSell();
+            TryCacheItemsToSell();
 
             var rightPanel = inRect.RightPartPixels(inRect.width - leftPanel.width - 12 - 16);
             rightPanel.x -= 16;
@@ -406,7 +406,7 @@ namespace MGAutoSell
             footerRow.Label("Total:");
         }
 
-        public List<TraderRecord> GetTraders()
+        public List<TraderRecord> GetTraders(bool generatePictures = true)
         {
             var stat = StatDefOf.TradePriceImprovement;
             var pawns = Find.CurrentMap.mapPawns.FreeColonists
@@ -417,8 +417,8 @@ namespace MGAutoSell
                     var improvement = pawn.GetStatValue(stat);
 
                     return new TraderRecord(pawn, pawn.LabelShort,
-                        PortraitsCache.Get(pawn, new Vector2(24, 24), Rot4.South,
-                            ColonistBarColonistDrawer.PawnTextureCameraOffset, 1.28205f),
+                        generatePictures ? PortraitsCache.Get(pawn, new Vector2(24, 24), Rot4.South,
+                            ColonistBarColonistDrawer.PawnTextureCameraOffset, 1.28205f) : null,
                         improvement.ToStringPercent(), improvement, isLeader);
                 })
                 .OrderByDescending(x => x.IsLeader)
@@ -427,7 +427,7 @@ namespace MGAutoSell
             return pawns;
         }
 
-        public void CacheItemsToSell(bool force = false)
+        public void TryCacheItemsToSell(bool force = false)
         {
             var shouldUpdate = force || (SellListDirty && nextQuickCache < DateTime.UtcNow.Ticks) ||
                                nextCache < Find.TickManager.TicksGame;
@@ -435,6 +435,11 @@ namespace MGAutoSell
             if (!shouldUpdate)
                 return;
 
+            CacheItemsToSell();
+        }
+
+        public void CacheItemsToSell()
+        {
             var timestamp = Stopwatch.GetTimestamp();
             var allItems = TradeUtility.AllLaunchableThingsForTrade(Find.CurrentMap).ToList();
             allItems.AddRange(TradeUtility.AllSellableColonyPawns(Find.CurrentMap, false).ToList());
@@ -470,7 +475,7 @@ namespace MGAutoSell
                 }
             }
 
-            var traders = GetTraders();
+            var traders = GetTraders(false);
             if (comp.autoTrade)
             {
                 var allowedTraders = traders.Where(x => comp.autoTraderIDs.Contains(x.Pawn.thingIDNumber)).ToList();
@@ -535,7 +540,7 @@ namespace MGAutoSell
                 Trader: new TraderRecord(socialPawn,
                     socialPawn.LabelShort,
                     PortraitsCache.Get(socialPawn, new Vector2(24, 24), Rot4.South,
-                        ColonistBarColonistDrawer.PawnTextureCameraOffset, 1.28205f).CreateTexture2D(),
+                        ColonistBarColonistDrawer.PawnTextureCameraOffset, 1.28205f),
                     playerNegotiator.ToStringPercent(), playerNegotiator, isLeader),
 
                 Rules: ruleDictionary.ToDictionary(x => x.Key,
