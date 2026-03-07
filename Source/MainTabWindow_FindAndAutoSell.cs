@@ -29,13 +29,14 @@ namespace MGAutoSell
 
     public record SellRecord(ThingDef Item, int Count, float Total, string PricePerLabel, string TotalLabel);
 
-    public record TraderRecord(Pawn pawn, string Name, Texture2D Icon, string ImprovementLabel, float Improvement);
+    public record TraderRecord(Pawn Pawn, string Name, Texture2D Icon, string ImprovementLabel, float Improvement, bool IsLeader);
 
     public record RuleRecord(ThingDef Item, int Count);
 
     public class MainTabWindow_FindAndAutoSell : MainTabWindow
     {
         public ItemsToSell sellCache;
+        private List<TraderRecord> tradersCache;
 
         private TradeRulesGameComp comp;
         private TradeRuleEditor editor;
@@ -46,10 +47,12 @@ namespace MGAutoSell
         private long nextQuickCache = 0;
 
         Vector2 listerScroll = Vector2.zero;
+        Vector2 settingScroll = Vector2.zero;
         Vector2? SellingSize, BuyingSize;
         private string previousRenderTime;
 
         private string title = $"<i>{"MGAutoSell.Title".Translate()}</i>";
+        private string tradeAutomaticallyLabel = "MGAutoSell.AutoSellToggle".Translate();
 
 #if DEBUG
         List<long> ticks = new List<long>();
@@ -60,9 +63,10 @@ namespace MGAutoSell
         protected override float Margin => 8f;
         public bool SellListDirty => editor != null;
         private int reorderID;
-        private int reorderRectHeight;
 
         private WindowTab currentTab = WindowTab.Rules;
+
+        private Color _fadedColor = new(1, 1, 1, 0.4f);
 
         public MainTabWindow_FindAndAutoSell()
         {
@@ -100,132 +104,210 @@ namespace MGAutoSell
             var timestamp = Stopwatch.GetTimestamp();
 #endif
             var color = GUI.color;
-            var fadedColor = new Color(1, 1, 1, 0.4f);
             var font = Text.Font;
             Text.Font = GameFont.Small;
 
             var width = currentTab == WindowTab.Rules ? 400f : 600f;
-
-            var rulesRect = inRect.LeftPartPixels(width);
-            var buttonRect = rulesRect.BottomPartPixels(30f).LeftPartPixels(30f);
+            var leftPanel = inRect.LeftPartPixels(width);
 
             switch (currentTab)
             {
                 case WindowTab.Edit:
-                    editor!.DoWindowContents(rulesRect);
-                    if (Widgets.ButtonImage(buttonRect, TexButton.Banish))
-                    {
-                        editor?.PostClose();
-                        editor = null;
-                        SelectedTradeRule = null;
-                    }
+                    DrawEditTab(leftPanel);
                     break;
                 case WindowTab.Settings:
-                    inRect.y -= 4;
-                    Text.Font = GameFont.Medium;
-                    GUI.color = fadedColor;
-
-                    Widgets.Label(inRect, title);
-                    Text.Font = GameFont.Small;
-                    GUI.color = color;
-                    inRect.y += 4;
-
-                    if (Widgets.ButtonImage(buttonRect, TexButton.Banish)) 
-                        currentTab = WindowTab.Rules;
+                {
+                    leftPanel.SplitHorizontally(30, out var header, out var body);
+                    DrawTitle(header);
+                    DrawSettingsTab(body);
+                }
                     break;
-
                 case WindowTab.Rules:
                 default:
-                    inRect.y -= 4;
-                    Text.Font = GameFont.Medium;
-                    GUI.color = fadedColor;
-
-                    Widgets.Label(inRect, title);
-                    Text.Font = GameFont.Small;
-                    GUI.color = color;
-                    inRect.y += 4;
-
-                    if (Widgets.ButtonImage(rulesRect.TopPartPixels(Text.LineHeight).RightPartPixels(Text.LineHeight),
-                            Textures.OptionsGeneral, fadedColor))
-                    {
-                        currentTab = WindowTab.Settings;
-                    }
-
-                    var height = 300f;
-                    var body = rulesRect.MiddlePartPixels(rulesRect.width, rulesRect.height - 60);
-
-
-                    GUI.color = fadedColor;
-                    Widgets.DrawLineHorizontal(body.x, body.y, body.width);
-                    GUI.color = color;
-                    var drawerListing = new Listing_StandardIndent();
-                    drawerListing.BeginScrollView(body, ref listerScroll,
-                        body.LeftPartPixels(body.width - 16).TopPartPixels(comp.tradeRules.Count * 30).AtZero());
-                    if (Event.current.type == EventType.Repaint)
-                        reorderID = ReorderableWidget.NewGroup(DoReorderSearch, ReorderableDirection.Vertical,
-                            new Rect(0.0f, -30, drawerListing.ColumnWidth, height + 30), 1f,
-                            (index, _) =>
-                                DrawMouseAttachedQuerySearch(comp.tradeRules[index].Search, drawerListing.ColumnWidth));
-
-                    for (var index = 0; index < comp.tradeRules.Count; index++)
-                    {
-                        var tradeRule = comp.tradeRules[index];
-                        var action = TradeRuleDrawUtility.DrawRow(drawerListing.GetRect(30), tradeRule, index, sellCache,
-                            reorderID);
-                        switch (action)
-                        {
-                            case TradeRuleAction.None:
-                                break;
-                            case TradeRuleAction.Delete:
-                                comp.tradeRules.RemoveAt(index);
-                                index--;
-                                break;
-                            case TradeRuleAction.Edit:
-                                DoEdit(tradeRule);
-                                break;
-                            case TradeRuleAction.Suspend:
-                                tradeRule.Enabled = !tradeRule.Enabled;
-                                break;
-                            case TradeRuleAction.Mode:
-                                tradeRule.Mode = tradeRule.Mode.Next();
-                                break;
-                            default:
-                                throw new ArgumentOutOfRangeException();
-                        }
-                    }
-
-                    drawerListing.EndScrollView(ref height);
-
-                    var controlsRect = rulesRect.BottomPartPixels(Text.LineHeight);
-                    if (Widgets.ButtonImage(controlsRect.LeftPartPixels(Text.LineHeight), FindTex.GreyPlus))
-                        CreateRule();
-#if DEBUG
-                    GUI.color = fadedColor;
-                    var controls = new WidgetRow(controlsRect.xMax, controlsRect.y, UIDirection.LeftThenDown);
-                    controls.Label($"<i> Render: {previousRenderTime}</i>");
-                    GUI.color = color;
-#endif
+                {
+                    leftPanel.SplitHorizontally(30, out var header, out var body);
+                    DrawTitle(header, true);
+                    DrawRulesTab(body);
+                }
                     break;
             }
 
-            var toSellRect = inRect.RightPartPixels(inRect.width - rulesRect.width - 12 - 16);
-            toSellRect.x -= 16;
-
-            GUI.color = fadedColor;
-            Widgets.DrawLineVertical(rulesRect.width + 6, 0, 300f);
-            GUI.color = color;
-
             CacheItemsToSell();
 
+            var rightPanel = inRect.RightPartPixels(inRect.width - leftPanel.width - 12 - 16);
+            rightPanel.x -= 16;
+
+            GUI.color = _fadedColor;
+            Widgets.DrawLineVertical(leftPanel.width + 6, 0, 300f);
+            GUI.color = color;
+
+            DrawSellPanel(rightPanel);
+
+            Text.Font = font;
+#if DEBUG
+            ticks.Add(Stopwatch.GetTimestamp() - timestamp);
+#endif
+        }
+
+        private void DrawTitle(Rect headerRect, bool showSettingsIcon = false)
+        {
+            var color = GUI.color;
+            headerRect.y -= 4;
+            Text.Font = GameFont.Medium;
+            GUI.color = _fadedColor;
+            Widgets.Label(headerRect, title);
+            Text.Font = GameFont.Small;
+            GUI.color = color;
+            headerRect.y += 4;
+
+            GUI.color = _fadedColor;
+            Widgets.DrawLineHorizontal(headerRect.x, headerRect.yMax - 2, headerRect.width);
+            GUI.color = color;
+
+            if (!showSettingsIcon || !Widgets.ButtonImage(
+                    headerRect.MiddlePartPixels(headerRect.width, Text.LineHeight).RightPartPixels(Text.LineHeight),
+                    Textures.OptionsGeneral, _fadedColor)) return;
+
+            tradersCache = GetTraders();
+            currentTab = WindowTab.Settings;
+        }
+
+        private void DrawEditTab(Rect panel)
+        {
+            var buttonRect = panel.BottomPartPixels(30f).LeftPartPixels(30f);
+            editor!.DoWindowContents(panel);
+            if (!Widgets.ButtonImage(buttonRect, TexButton.Banish)) 
+                return;
+
+            currentTab = WindowTab.Rules;
+            editor?.PostClose();
+            editor = null;
+            SelectedTradeRule = null;
+        }
+
+        private void DrawSettingsTab(Rect panel)
+        {
+            panel.SplitHorizontally(panel.height - 30, out var body, out var footer);
+            var buttonRect = footer.LeftPartPixels(30f);
+            if (Widgets.ButtonImage(buttonRect, TexButton.Banish))
+            {
+                tradersCache = null;
+                currentTab = WindowTab.Rules;
+                return;
+            }
+
+            body.SplitHorizontally(Text.LineHeight, out var autoSellRect, out var drawer);
+            Widgets.CheckboxLabeled(autoSellRect, tradeAutomaticallyLabel, ref comp.autoTrade);
+
+            var spacePerRow = Text.LineHeight;
+            var totalHeight = tradersCache.Count * spacePerRow;
+            var shouldScroll = totalHeight > drawer.height;
+            var listing = new Listing_StandardIndent();
+            if (shouldScroll)
+                listing.BeginScrollView(drawer, ref settingScroll, drawer.LeftPartPixels(drawer.width - 16).AtZero());
+            else
+                listing.Begin(drawer);
+
+            for (var i = 0; i < tradersCache.Count; i++)
+            {
+                var trader = tradersCache[i];
+                var rect = listing.GetRect(spacePerRow);
+                if (i % 2 == 1)
+                    Widgets.DrawLightHighlight(rect);
+                var row = new WidgetRow(rect.x, rect.y, maxWidth: rect.width);
+                
+                var iconRect = row.GetRect(spacePerRow);
+                iconRect.y -= 4;
+                GUI.DrawTexture(iconRect, trader.Icon);
+
+                row.Label($"{trader.Name} ({trader.ImprovementLabel})");
+
+                if (trader.IsLeader)
+                {
+                    var role = trader.Pawn.Ideo.GetRole(trader.Pawn);
+                    if(role != null)
+                    {
+                        var color = GUI.color;
+                        GUI.color = trader.Pawn.ideo.Ideo.Color;
+                        row.Icon(role.Icon, role.TipLabel);
+                        GUI.color = color;
+                    }
+                }
+            }
+
+            var height = 0f;
+            if(shouldScroll)
+                listing.EndScrollView(ref height);
+            else
+                listing.End();
+        }
+
+        private void DrawRulesTab(Rect panel)
+        {
+            var height = 300f;
+            var body = panel.TopPartPixels(panel.height - 30);
+
+            var drawerListing = new Listing_StandardIndent();
+            drawerListing.BeginScrollView(body, ref listerScroll,
+                body.LeftPartPixels(body.width - 16).TopPartPixels(comp.tradeRules.Count * 30).AtZero());
+
+            if (Event.current.type == EventType.Repaint)
+                reorderID = ReorderableWidget.NewGroup(DoReorderSearch, ReorderableDirection.Vertical,
+                    new Rect(0.0f, -30, drawerListing.ColumnWidth, height + 30), 1f,
+                    (index, _) =>
+                        DrawMouseAttachedQuerySearch(comp.tradeRules[index].Search, drawerListing.ColumnWidth));
+
+            for (var index = 0; index < comp.tradeRules.Count; index++)
+            {
+                var tradeRule = comp.tradeRules[index];
+                var action = TradeRuleDrawUtility.DrawRow(drawerListing.GetRect(30), tradeRule, index, sellCache,
+                    reorderID);
+                switch (action)
+                {
+                    case TradeRuleAction.None:
+                        break;
+                    case TradeRuleAction.Delete:
+                        comp.tradeRules.RemoveAt(index);
+                        index--;
+                        break;
+                    case TradeRuleAction.Edit:
+                        DoEdit(tradeRule);
+                        break;
+                    case TradeRuleAction.Suspend:
+                        tradeRule.Enabled = !tradeRule.Enabled;
+                        break;
+                    case TradeRuleAction.Mode:
+                        tradeRule.Mode = tradeRule.Mode.Next();
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
+
+            drawerListing.EndScrollView(ref height);
+
+            var controlsRect = panel.BottomPartPixels(Text.LineHeight);
+            if (Widgets.ButtonImage(controlsRect.LeftPartPixels(Text.LineHeight), FindTex.GreyPlus))
+                CreateRule();
+#if DEBUG
+            var color = GUI.color;
+            GUI.color = _fadedColor;
+            var controls = new WidgetRow(controlsRect.xMax, controlsRect.y, UIDirection.LeftThenDown);
+            controls.Label($"<i> Render: {previousRenderTime}</i>");
+            GUI.color = color;
+#endif
+        }
+
+        private void DrawSellPanel(Rect toSellRect)
+        {
             toSellRect.SplitHorizontally(Text.LineHeight, out var itemHeader, out toSellRect);
 
             Widgets.DrawLightHighlight(itemHeader);
-
             Widgets.Label(itemHeader.RightPartPixels(itemHeader.width - Text.LineHeight - 10), "Items to Sell");
             GUI.DrawTexture(itemHeader.RightPartPixels(24f), ThingDefOf.Silver.uiIcon);
 
             toSellRect.SplitHorizontally(4, out var gapHeader, out toSellRect);
-            Widgets.DrawLineHorizontal(gapHeader.x, gapHeader.y, gapHeader.width, fadedColor);
+            Widgets.DrawLineHorizontal(gapHeader.x, gapHeader.y, gapHeader.width, _fadedColor);
 
             int i = 0;
             var anchor = Text.Anchor;
@@ -236,7 +318,7 @@ namespace MGAutoSell
                 if (i % 2 == 1)
                     Widgets.DrawLightHighlight(row);
                 i++;
-
+                var color = GUI.color;
                 GUI.color = thingDef.uiIconColor;
                 GUI.DrawTexture(row.LeftPartPixels(row.height), thingDef.uiIcon);
                 GUI.color = color;
@@ -259,6 +341,7 @@ namespace MGAutoSell
 
             var footer = toSellRect.BottomPartPixels(Text.LineHeight);
             Widgets.DrawLightHighlight(footer);
+
             var iconRect = footer.LeftPartPixels(Text.LineHeight);
             iconRect.y -= 4;
             GUI.DrawTexture(iconRect, sellCache.Trader.Icon);
@@ -266,8 +349,10 @@ namespace MGAutoSell
             var sellerLabel = sellCache.Trader.Name + $" ({sellCache.Trader.ImprovementLabel})";
             if (SellerOverride != null)
                 sellerLabel = $"<i>{sellerLabel}</i>";
+
             var sellerLabelWidth = Text.CalcSize(sellerLabel);
             Widgets.Label(footer.RightPartPixels(footer.width - Text.LineHeight), sellerLabel);
+
             var sellerOverrideRect = footer.LeftPartPixels(iconRect.width + sellerLabelWidth.x + 8);
             Widgets.DrawHighlightIfMouseover(sellerOverrideRect);
             if (Widgets.ButtonInvisible(sellerOverrideRect) && Event.current.button == (int)MouseButton.RightMouse)
@@ -275,9 +360,9 @@ namespace MGAutoSell
                 var pawns = GetTraders().Select(x => new FloatMenuOption(
                     x.Name + $" ({x.ImprovementLabel})", () =>
                     {
-                        SellerOverride = x.pawn;
+                        SellerOverride = x.Pawn;
                         nextCache = 0;
-                    }, x.pawn, Color.white)).ToList();
+                    }, x.Pawn, Color.white)).ToList();
 
                 if (SellerOverride != null)
                     pawns.Add(new FloatMenuOption("Auto", () =>
@@ -293,10 +378,6 @@ namespace MGAutoSell
             footerRow.Label(sellCache.TotalSilverLabel);
             footerRow.Icon(ThingDefOf.Silver.uiIcon);
             footerRow.Label("Total:");
-            Text.Font = font;
-#if DEBUG
-            ticks.Add(Stopwatch.GetTimestamp() - timestamp);
-#endif
         }
 
         public List<TraderRecord> GetTraders()
@@ -306,12 +387,14 @@ namespace MGAutoSell
                 .Where(pawn => pawn.RaceProps.Humanlike && !stat.Worker.IsDisabledFor(pawn))
                 .Select(pawn =>
                 {
+                    var isLeader = ModsConfig.IdeologyActive && pawn == Faction.OfPlayer.leader;
                     var improvement = pawn.GetStatValue(stat) +
-                                      (ModsConfig.IdeologyActive && pawn == Faction.OfPlayer.leader ? 0.02f : 0f);
+                                      (isLeader ? 0.02f : 0f);
+
                     return new TraderRecord(pawn, pawn.Name.ToStringFull,
                         PortraitsCache.Get(pawn, new Vector2(24, 24), Rot4.South,
                             ColonistBarColonistDrawer.PawnTextureCameraOffset, 1.28205f).CreateTexture2D(),
-                        improvement.ToStringPercent(), improvement);
+                        improvement.ToStringPercent(), improvement, isLeader);
                 })
                 .OrderByDescending(x => x.Improvement)
                 .ToList();
@@ -361,11 +444,12 @@ namespace MGAutoSell
                 }
             }
 
-            var socialPawn = SellerOverride ?? GetTraders().MaxBy(x => x.Improvement).pawn;
+            var socialPawn = SellerOverride ?? GetTraders().MaxBy(x => x.Improvement).Pawn;
 
             var traderPriceType = PriceType.Normal.PriceMultiplier();
             var playerNegotiator = socialPawn.GetStatValue(StatDefOf.TradePriceImprovement);
-            var leaderBonus = socialPawn == Faction.OfPlayer.leader ? 0.02f : 0f;
+            var isLeader = ModsConfig.IdeologyActive && socialPawn == Faction.OfPlayer.leader;
+            var leaderBonus = isLeader ? 0.02f : 0f;
             var settlement = socialPawn.TradePriceImprovementOffsetForPlayer;
             var drugBonusRaw = socialPawn.GetStatValue(StatDefOf.DrugSellPriceImprovement);
             var animalProduceBonusRaw = ModsConfig.IdeologyActive
@@ -420,7 +504,7 @@ namespace MGAutoSell
                     socialPawn.Name.ToStringFull,
                     PortraitsCache.Get(socialPawn, new Vector2(24, 24), Rot4.South,
                         ColonistBarColonistDrawer.PawnTextureCameraOffset, 1.28205f).CreateTexture2D(),
-                    playerNegotiator.ToStringPercent(), playerNegotiator),
+                    playerNegotiator.ToStringPercent(), playerNegotiator, isLeader),
 
                 Rules: ruleDictionary.ToDictionary(x => x.Key,
                     x => x.Value.GroupBy(y => y.def)
@@ -448,7 +532,7 @@ namespace MGAutoSell
             else
             {
                 editor = new TradeRuleEditor(tradeRule);
-                currentTab = WindowTab.Settings;
+                currentTab = WindowTab.Edit;
                 SelectedTradeRule = tradeRule;
             }
         }
@@ -461,6 +545,7 @@ namespace MGAutoSell
                     comp.tradeRules.Add(tradeRule);
 
                     editor = new TradeRuleEditor(tradeRule);
+                    currentTab = WindowTab.Edit;
                 },
                 "TD.NameForNewAlert".Translate(),
                 name => comp.tradeRules.Any(x => name == x.Search.name)));

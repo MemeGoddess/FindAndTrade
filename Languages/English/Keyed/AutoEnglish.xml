@@ -15,4 +15,5 @@
     <MGAutoSell.RuleInvalid>This rule is invalid because the minimum exceeds the maximum.</MGAutoSell.RuleInvalid>
 
     <MGAutoSell.Title>Find / Trade</MGAutoSell.Title>
+    <MGAutoSell.AutoSellToggle>Trade Automatically</MGAutoSell.AutoSellToggle>
 </LanguageData>
