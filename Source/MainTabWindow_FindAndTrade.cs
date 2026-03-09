@@ -508,7 +508,7 @@ namespace MGAutoSell
 
             var sellEntries = sellDictionary.GetEntries(socialPawn, ref thingDictionary);
 
-            var potentialItems = comp.tradeRules.GetPossibleItems(sellEntries);
+            var potentialItems = comp.tradeRules.GetPossibleItemsList(sellEntries);
             
             var totalSilver = (float)Math.Round(sellEntries.Sum(x => x.Total), 0);
 

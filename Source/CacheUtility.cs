@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using RimWorld;
+using TD_Find_Lib;
 using Verse;
 
 namespace MGAutoSell
@@ -110,15 +111,25 @@ namespace MGAutoSell
                         : x.Value.Sum(y => y.stackCount).ToString()));
         }
 
-        public static List<ThingDef> GetPossibleItems(this TradeRulesGroup rules, List<SellRecord> sellEntries)
+        public static List<ThingDef> GetPossibleItemsList(this TradeRulesGroup rules, List<SellRecord> sellEntries)
         {
             if (!Mod.Settings.showAllMatchingItems)
                 return [];
 
             itemCache ??= DefDatabase<ThingDef>.AllDefsListForReading.Select(y => ThingMaker.MakeThing(y, y.MadeFromStuff ? GenStuff.DefaultStuffFor(y) : null)).ToList();
-            var potentialItems = itemCache.Where(x => rules.Any(y => y.Enabled && y.search.Children.queries.Any() && y.AllowBuy && y.search.AppliesTo(x))).Select(x => x.def).ToList();
+            var potentialItems = rules.Where(x => x.Enabled && x.AllowBuy).SelectMany(x => x.search.AllItems ??= x.search.GetPossibleItems()).Distinct().ToList();
             potentialItems.RemoveAll(x => sellEntries.Any(y => y.Item == x));
             return potentialItems;
+        }
+
+        public static List<ThingDef> GetPossibleItems(this QuerySearch search)
+        {
+            itemCache ??= DefDatabase<ThingDef>.AllDefsListForReading.Select(y => ThingMaker.MakeThing(y, y.MadeFromStuff ? GenStuff.DefaultStuffFor(y) : null)).ToList();
+
+            if(!search.Children.queries.Any(x => x.Enabled))
+                return [];
+
+            return itemCache.Where(x => search.AppliesTo(x)).Select(x => x.def).ToList();
         }
     }
 }

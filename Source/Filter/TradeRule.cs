@@ -9,7 +9,7 @@ namespace MGAutoSell.Filter
         public int Export;
         public bool Enabled = true;
         public TradeRuleAggregation Aggregation = TradeRuleAggregation.ThingDef;
-        public QuerySearch search;
+        public TradeQuerySearch search;
         public QuerySearch Search => search;
         public TradeMode Mode = TradeMode.Export;
 
@@ -47,7 +47,7 @@ namespace MGAutoSell.Filter
 
         public TradeRule(string name)
         {
-            search = new QuerySearch()
+            search = new TradeQuerySearch()
             {
                 name = name,
             };
