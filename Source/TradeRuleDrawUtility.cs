@@ -88,7 +88,7 @@ namespace MGAutoSell
             {
                 if (invalidSell) 
                     GUI.color = Invalid;
-                
+                var before = item.Export;
                 var tooltip = right.TextFieldNumeric<int>(ref item.Export, ref item.ExportBuffer, BoxSize);
                 if (invalidSell)
                     TooltipHandler.TipRegion(tooltip, () => TagInvalid.Formatted(GetInvalidMessage(item.Import, item.Export, item.Mode)), item.Hash);
@@ -97,6 +97,10 @@ namespace MGAutoSell
                     item.Export = 0;
                     item.ExportBuffer = "";
                 }
+
+                var after = item.Export;
+                if(before != after)
+                    response = TradeRuleAction.Refresh;
 
                 GUI.color = OGColor;
             }
@@ -147,6 +151,9 @@ namespace MGAutoSell
             {
                 if (invalidBuy)
                     GUI.color = Invalid;
+
+                var before = item.Import;
+
                 var tooltip = right.TextFieldNumeric<int>(ref item.Import, ref item.ImportBuffer, BoxSize);
                 if(invalidBuy)
                     TooltipHandler.TipRegion(tooltip, () => TagInvalid.Formatted(GetInvalidMessage(item.Import, item.Export, item.Mode)), item.Hash);
@@ -155,6 +162,10 @@ namespace MGAutoSell
                     item.Import = 0;
                     item.ImportBuffer = "";
                 }
+
+                var after = item.Import;
+                if (before != after)
+                    response = TradeRuleAction.Refresh;
 
                 GUI.color = OGColor;
             }
@@ -263,6 +274,7 @@ namespace MGAutoSell
         Delete,
         Edit,
         Suspend,
-        Mode
+        Mode,
+        Refresh
     }
 }

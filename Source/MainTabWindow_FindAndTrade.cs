@@ -301,6 +301,12 @@ namespace MGAutoSell
                     case TradeRuleAction.Mode:
                         tradeRule.Mode = tradeRule.Mode.Next();
                         break;
+                    case TradeRuleAction.Refresh:
+                        sellCache = sellCache with
+                        {
+                            PotentialItems = comp.tradeRules.GetPossibleItemsList(sellCache.Items)
+                        };
+                        break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }

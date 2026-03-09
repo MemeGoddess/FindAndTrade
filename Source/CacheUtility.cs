@@ -124,7 +124,7 @@ namespace MGAutoSell
 
         public static List<ThingDef> GetPossibleItems(this QuerySearch search)
         {
-            itemCache ??= GenerateItemCache();
+            itemCache ??= GenerateItemCache(); 
 
             if (!search.Children.queries.Any(x => x.Enabled))
                 return [];
@@ -136,7 +136,9 @@ namespace MGAutoSell
         {
             var traders = DefDatabase<TraderKindDef>.AllDefsListForReading;
 
-            return DefDatabase<ThingDef>.AllDefsListForReading.Where(x => traders.Any(trader => trader.WillTrade(x))).Select(y => ThingMaker.MakeThing(y, y.MadeFromStuff ? GenStuff.DefaultStuffFor(y) : null)).ToList();
+            return DefDatabase<ThingDef>.AllDefsListForReading
+                .Where(x => traders.Any(trader => trader.WillTrade(x)) && x.uiIcon != null)
+                .Select(y => y.race != null ? PawnGenerator.GeneratePawn(y.race.AnyPawnKind) : ThingMaker.MakeThing(y, y.MadeFromStuff ? GenStuff.DefaultStuffFor(y) : null)).ToList();
         }
     }
 }
