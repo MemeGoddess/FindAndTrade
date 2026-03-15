@@ -6,6 +6,7 @@ using RimWorld;
 using TD_Find_Lib;
 using UnityEngine;
 using Verse;
+using Color = UnityEngine.Color;
 
 namespace MGAutoSell
 {
@@ -22,6 +23,7 @@ namespace MGAutoSell
 
         private static string _benchmarkLabel;
         private static string _benchmarkLabelDisabled;
+        private static string _benchmarkLabelDisabledNoDev;
         private static string _scanEveryStackLabel;
         private static string _scanEveryStackTooltip;
         private static string _showAllMatchingItemsLabel;
@@ -31,6 +33,7 @@ namespace MGAutoSell
         private static string _colorRuleCountsOnWorkLabel;
         private static string _colorRuleCountsOnWorkTooltip;
 
+        private static BenchmarkResults benchmarkResults = null;
         private static ItemsToSell _showAllMatchItemsEnabled;
         private static ItemsToSell _showAllMatchItemsDisabled;
         private static ItemsToSell _exampleTradeRulesCache;
@@ -43,6 +46,7 @@ namespace MGAutoSell
         {
             _benchmarkLabel = "MGAutoSell.Settings.Benchmark".Translate();
             _benchmarkLabelDisabled = "MGAutoSell.Settings.BenchmarkDisabled".Translate();
+            _benchmarkLabelDisabledNoDev = "MGAutoSell.Settings.BenchmarkDisabledNoDev".Translate();
             _scanEveryStackLabel = "MGAutoSell.Settings.scanEveryStackLabel".Translate();
             _scanEveryStackTooltip = "MGAutoSell.Settings.scanEveryStackTooltip".Translate();
             _showAllMatchingItemsLabel = "MGAutoSell.Settings.showAllMatchingItemsLabel".Translate();
@@ -210,19 +214,33 @@ namespace MGAutoSell
 
             var biggestHeight = height > 150f ? height : 150f;
             var color = GUI.color;
-            GUI.color = new(1, 1, 1, 0.4f);
+            var faded = new Color(1, 1, 1, 0.4f);
+            GUI.color = faded;
             Widgets.DrawLineVertical(body.width + 8f, body.y + bottom.y, biggestHeight);
             GUI.color = color;
 
             //if (benchmarkTray == Rect.zero)
             //    return;
 
-            bottom.SplitHorizontallyWithMargin(out bottom, out benchmarkTray, out _, 20f, biggestHeight + maxHeightOfSides);
-            listing.Begin(benchmarkTray);
-
-            listing.GapLine(8f);
             
-            if(Find.CurrentMap == null)
+
+            bottom.SplitHorizontallyWithMargin(out bottom, out benchmarkTray, out _, 20f, biggestHeight + maxHeightOfSides);
+
+            if (!Prefs.DevMode)
+            {
+                listing.Begin(benchmarkTray.BottomPartPixels(8f + Text.LineHeight));
+                GUI.color = faded;
+                listing.GapLine(8f);
+                listing.Label(_benchmarkLabelDisabledNoDev);
+                GUI.color = color;
+                listing.End();
+                return;
+            }
+
+            listing.Begin(benchmarkTray);
+            listing.GapLine(8f);
+
+            if (Find.CurrentMap == null)
             {
                 listing.Label(_benchmarkLabelDisabled);
                 listing.End();
@@ -231,7 +249,21 @@ namespace MGAutoSell
 
             if (listing.ButtonText(_benchmarkLabel))
             {
+                // Run it twice to get an accurate result
+                if(benchmarkResults == null)
+                    CacheUtility.Cache(Current.Game.GetComponent<TradeRulesGameComp>(), out benchmarkResults, withBenchmark: true);
+                CacheUtility.Cache(Current.Game.GetComponent<TradeRulesGameComp>(), out benchmarkResults, withBenchmark: true);
+            }
 
+            if (benchmarkResults != null)
+            {
+                listing.Label("Find all items on map: " + benchmarkResults.AllItems.Label);
+                listing.Label("Add junk to be sold: " + benchmarkResults.Junk.Label);
+                listing.Label("Match items to rules: " + benchmarkResults.Sell.Label);
+                listing.Label("Select traders: " + benchmarkResults.Traders.Label);
+                listing.Label("Selling entries: " + benchmarkResults.SellEntries.Label);
+                listing.Label("Buying entries: " + benchmarkResults.PossibleItems.Label);
+                listing.Label("Create cache: " + benchmarkResults.BuildCache.Label);
             }
 
             listing.End();

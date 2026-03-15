@@ -533,60 +533,21 @@ namespace MGAutoSell
             CacheItemsToSell();
         }
 
-        public void CacheItemsToSell()
+        public void CacheItemsToSell(bool withBenchmark = false)
         {
+#if DEBUG
             var timestamp = Stopwatch.GetTimestamp();
-            var allItems = TradeUtility.AllLaunchableThingsForTrade(Find.CurrentMap).ToList();
-            allItems.AddRange(TradeUtility.AllSellableColonyPawns(Find.CurrentMap, false).ToList());
-            var thingDictionary = new Dictionary<ThingDef, List<Thing>>();
-            var ruleDictionary = new Dictionary<TradeRule, List<Thing>>();
 
-            var junk = allItems.GetJunk();
-
-            thingDictionary.AddRange(junk.ToDictionary(x => x.Key,
-                x => x.ToList()));
-
-            var sellDictionary = allItems.DoRules(comp.tradeRules, ref thingDictionary, ref ruleDictionary);
-
-            var traders = GetTraders(false);
-            if (comp.autoTrade)
-            {
-                var allowedTraders = traders.Where(x => comp.autoTraderIDs.Contains(x.Pawn.thingIDNumber)).ToList();
-                if (allowedTraders.Any())
-                    traders = allowedTraders;
-            }
-
-            var socialPawn = SellerOverride ?? traders.MaxBy(x => x.Improvement).Pawn;
-            var playerNegotiator = socialPawn.GetStatValue(StatDefOf.TradePriceImprovement);
-            var isLeader = ModsConfig.IdeologyActive && socialPawn == Faction.OfPlayer.leader;
-
-            var sellEntries = sellDictionary.GetEntries(socialPawn, ref thingDictionary);
-
-            var potentialItems = comp.tradeRules.GetPossibleItemsList(sellEntries);
-            
-            var totalSilver = (float)Math.Round(sellEntries.Sum(x => x.Total.Value), 0);
-
-            var ruleCounts = ruleDictionary.GetRuleCounts();
-
-            var trader = new TraderRecord(socialPawn,
-                socialPawn.LabelShort,
-                () => PortraitsCache.Get(socialPawn, new Vector2(24, 24), Rot4.South,
-                    ColonistBarColonistDrawer.PawnTextureCameraOffset, 1.28205f),
-                playerNegotiator.ToStringPercent(), playerNegotiator, isLeader);
-
-            sellCache = new ItemsToSell(
-                Items: sellEntries,
-                PotentialItems: potentialItems,
-                TotalSilver: new ItemAndLabel<float>(totalSilver, totalSilver.ToStringMoney()),
-                Trader: trader,
-                Rules: ruleCounts);
-            sellCache.Rules.RemoveAll(x => x.Value.Value == 0);
+#endif
+            sellCache = CacheUtility.Cache(comp, out _, SellerOverride, withBenchmark);
 
             nextCache = Find.TickManager.TicksGame + 3600;
             nextQuickCache = DateTime.UtcNow.AddSeconds(1).Ticks;
 
+#if DEBUG
             var duration = Stopwatch.GetTimestamp() - timestamp;
             Log.Message($"Generated list in {duration}ts");
+#endif
         }
 
         public TradeRule SelectedTradeRule;

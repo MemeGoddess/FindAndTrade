@@ -7,12 +7,26 @@ using System.Threading.Tasks;
 using RimWorld;
 using TD_Find_Lib;
 using Verse;
+using System.Diagnostics;
+using UnityEngine;
 
 namespace MGAutoSell
 {
+    public record BenchmarkResults(
+        ItemAndLabel<long> AllItems,
+        ItemAndLabel<long> Junk,
+        ItemAndLabel<long> Sell,
+        ItemAndLabel<long> Traders,
+        ItemAndLabel<long> SellEntries,
+        ItemAndLabel<long> PossibleItems,
+        ItemAndLabel<long> Quantity,
+        ItemAndLabel<long> BuildCache);
     public static class CacheUtility
     {
         private static List<Thing> itemCache;
+        
+
+
         public static List<IGrouping<ThingDef, Thing>> GetJunk(this List<Thing> allItems)
         {
             var junk = allItems
@@ -148,6 +162,107 @@ namespace MGAutoSell
             return DefDatabase<ThingDef>.AllDefsListForReading
                 .Where(x => traders.Any(trader => trader.WillTrade(x)) && x.uiIcon != null)
                 .Select(y => y.race != null ? PawnGenerator.GeneratePawn(y.race.AnyPawnKind) : ThingMaker.MakeThing(y, y.MadeFromStuff ? GenStuff.DefaultStuffFor(y) : null)).ToList();
+        }
+
+        public static ItemsToSell Cache(TradeRulesGameComp comp, out BenchmarkResults benchmark, Pawn SellerOverride = null, bool withBenchmark = false)
+        {
+            long benchmarkAllItems = 0, benchmarkJunk = 0, benchmarkSell = 0, benchmarkTraders = 0, benchmarkSellEntries = 0, benchmarkPossibleItems = 0, benchmarkSilver = 0, benchmarkQuantity = 0, benchmarkBuildCache = 0;
+
+            if(withBenchmark)
+            {
+                comp.tradeRules.ForEach(x => x.search.AllItems = null);
+                itemCache ??= GenerateItemCache();
+            }
+
+            var timestamp = Stopwatch.GetTimestamp();
+            var allItems = TradeUtility.AllLaunchableThingsForTrade(Find.CurrentMap).ToList();
+            allItems.AddRange(TradeUtility.AllSellableColonyPawns(Find.CurrentMap, false).ToList());
+
+            if (withBenchmark)
+                RecordTime(ref timestamp, ref benchmarkAllItems);
+
+            var thingDictionary = new Dictionary<ThingDef, List<Thing>>();
+            var ruleDictionary = new Dictionary<TradeRule, List<Thing>>();
+
+            var junk = allItems.GetJunk();
+
+            thingDictionary.AddRange(junk.ToDictionary(x => x.Key,
+                x => x.ToList()));
+
+            if (withBenchmark)
+                RecordTime(ref timestamp, ref benchmarkJunk);
+
+            var sellDictionary = allItems.DoRules(comp.tradeRules, ref thingDictionary, ref ruleDictionary);
+
+            if (withBenchmark)
+                RecordTime(ref timestamp, ref benchmarkSell);
+
+            var traders = TabUtility.GetTraders(false);
+            if (comp.autoTrade)
+            {
+                var allowedTraders = traders.Where(x => comp.autoTraderIDs.Contains(x.Pawn.thingIDNumber)).ToList();
+                if (allowedTraders.Any())
+                    traders = allowedTraders;
+
+            }
+
+            if (withBenchmark)
+                RecordTime(ref timestamp, ref benchmarkTraders);
+
+            var socialPawn = SellerOverride ?? traders.MaxBy(x => x.Improvement).Pawn;
+            var playerNegotiator = socialPawn.GetStatValue(StatDefOf.TradePriceImprovement);
+            var isLeader = ModsConfig.IdeologyActive && socialPawn == Faction.OfPlayer.leader;
+
+            var sellEntries = sellDictionary.GetEntries(socialPawn, ref thingDictionary);
+
+            if (withBenchmark)
+                RecordTime(ref timestamp, ref benchmarkSellEntries);
+
+            var potentialItems = comp.tradeRules.GetPossibleItemsList(sellEntries);
+
+            if (withBenchmark)
+                RecordTime(ref timestamp, ref benchmarkPossibleItems);
+
+            var totalSilver = (float)Math.Round(sellEntries.Sum(x => x.Total.Value), 0);
+
+            if(withBenchmark)
+                RecordTime(ref timestamp, ref benchmarkSilver);
+
+            var ruleCounts = ruleDictionary.GetRuleCounts();
+
+            if (withBenchmark)
+                RecordTime(ref timestamp, ref benchmarkQuantity);
+
+            var trader = new TraderRecord(socialPawn,
+                socialPawn.LabelShort,
+                () => PortraitsCache.Get(socialPawn, new Vector2(24, 24), Rot4.South,
+                    ColonistBarColonistDrawer.PawnTextureCameraOffset, 1.28205f),
+                playerNegotiator.ToStringPercent(), playerNegotiator, isLeader);
+
+            var sellCache = new ItemsToSell(
+                Items: sellEntries,
+                PotentialItems: potentialItems,
+                TotalSilver: new ItemAndLabel<float>(totalSilver, totalSilver.ToStringMoney()),
+                Trader: trader,
+                Rules: ruleCounts);
+            sellCache.Rules.RemoveAll(x => x.Value.Value == 0);
+
+            if (withBenchmark)
+                RecordTime(ref timestamp, ref benchmarkBuildCache);
+
+            ItemAndLabel<long> BM(long v) => new(v, TimeSpan.FromTicks(v).TotalMilliseconds + "ms");
+
+            benchmark = new BenchmarkResults(BM(benchmarkAllItems), BM(benchmarkJunk), BM(benchmarkSell), BM(benchmarkTraders),
+                    BM(benchmarkSellEntries), BM(benchmarkPossibleItems), BM(benchmarkQuantity), BM(benchmarkBuildCache));
+
+            return sellCache;
+        }
+
+        public static void RecordTime(ref long startTime, ref long duration)
+        {
+            var benchmarkNewTime = Stopwatch.GetTimestamp();
+            duration = benchmarkNewTime - startTime;
+            startTime = benchmarkNewTime;
         }
     }
 }

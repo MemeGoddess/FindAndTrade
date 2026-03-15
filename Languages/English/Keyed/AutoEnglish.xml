@@ -33,6 +33,7 @@
 
     <MGAutoSell.Settings.Benchmark>Benchmark</MGAutoSell.Settings.Benchmark>
     <MGAutoSell.Settings.BenchmarkDisabled>Load a save/map to enable benchmarking.</MGAutoSell.Settings.BenchmarkDisabled>
+    <MGAutoSell.Settings.BenchmarkDisabledNoDev>Enable dev mode to benchmark.</MGAutoSell.Settings.BenchmarkDisabledNoDev>
 
     <MGAutoSell.Settings.scanEveryStackLabel>Scan Every Stack</MGAutoSell.Settings.scanEveryStackLabel>
     <MGAutoSell.Settings.scanEveryStackTooltip>Scan every stack of items on the map instead of just the first per ThingDef.</MGAutoSell.Settings.scanEveryStackTooltip>
@@ -43,6 +44,6 @@
     <MGAutoSell.Settings.showQuantityInsteadOfLabelLabel>Show Quantity Instead of Label</MGAutoSell.Settings.showQuantityInsteadOfLabelLabel>
     <MGAutoSell.Settings.showQuantityInsteadOfLabelTooltip>Display the quantity of items instead of their mode labels.</MGAutoSell.Settings.showQuantityInsteadOfLabelTooltip>
 
-    <MGAutoSell.Settings.colorRuleCountsOnWorkLabel>Color Import/Export boxes based on quantity</MGAutoSell.Settings.colorRuleCountsOnWorkLabel>
+    <MGAutoSell.Settings.colorRuleCountsOnWorkLabel>Color Import/Export Boxes Based on Quantity</MGAutoSell.Settings.colorRuleCountsOnWorkLabel>
     <MGAutoSell.Settings.colorRuleCountsOnWorkTooltip>Color the Import/Export boxes based on whether the rule will do something on the next trade.</MGAutoSell.Settings.colorRuleCountsOnWorkTooltip>
 </LanguageData>
