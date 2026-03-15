@@ -180,25 +180,38 @@ namespace MGAutoSell
             footerRow.Icon(ThingDefOf.Silver.uiIcon);
             footerRow.LabelFast("Total:");
         }
+
         public static List<TraderRecord> GetTraders(bool generatePictures = true)
         {
             var stat = StatDefOf.TradePriceImprovement;
-            var pawns = Find.CurrentMap.mapPawns.FreeColonists
-                .Where(pawn => pawn.RaceProps.Humanlike && !stat.Worker.IsDisabledFor(pawn))
-                .Select(pawn =>
-                {
-                    var isLeader = ModsConfig.IdeologyActive && pawn == Faction.OfPlayer.leader;
-                    var improvement = pawn.GetStatValue(stat);
+            var freeColonists = Find.CurrentMap.mapPawns.FreeColonists;
+            var isIdeologyActive = ModsConfig.IdeologyActive;
+            var leader = isIdeologyActive ? Faction.OfPlayer.leader : null;
+            var traders = new List<TraderRecord>(freeColonists.Count);
 
-                    return new TraderRecord(pawn, pawn.LabelShort,
-                        generatePictures ? () => PortraitsCache.Get(pawn, new Vector2(24, 24), Rot4.South,
-                            ColonistBarColonistDrawer.PawnTextureCameraOffset, 1.28205f) : () => null,
-                        improvement.ToStringPercent(), improvement, isLeader);
-                })
-                .OrderByDescending(x => x.IsLeader)
-                .ThenByDescending(x => x.Improvement)
-                .ToList();
-            return pawns;
+            foreach (var pawn in freeColonists)
+            {
+                if (!pawn.RaceProps.Humanlike || stat.Worker.IsDisabledFor(pawn))
+                    continue;
+
+                var improvement = pawn.GetStatValue(stat);
+                var isLeader = pawn == leader;
+                Func<Texture> iconGetter = generatePictures
+                    ? () => PortraitsCache.Get(pawn, new Vector2(24, 24), Rot4.South,
+                        ColonistBarColonistDrawer.PawnTextureCameraOffset, 1.28205f)
+                    : () => null;
+
+                traders.Add(new TraderRecord(pawn, pawn.LabelShort, iconGetter,
+                    improvement.ToStringPercent(), improvement, isLeader));
+            }
+
+            traders.Sort(static (a, b) =>
+            {
+                var leaderCompare = b.IsLeader.CompareTo(a.IsLeader);
+                return leaderCompare != 0 ? leaderCompare : b.Improvement.CompareTo(a.Improvement);
+            });
+
+            return traders;
         }
 
     }

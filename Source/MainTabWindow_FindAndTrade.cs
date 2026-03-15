@@ -11,6 +11,7 @@ using TD_Find_Lib;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Verse;
+using static MGAutoSell.TabUtility;
 
 namespace MGAutoSell
 {
@@ -499,27 +500,6 @@ namespace MGAutoSell
             footerRow.LabelFast(sellCache.TotalSilver.Label);
             footerRow.Icon(ThingDefOf.Silver.uiIcon);
             footerRow.LabelFast("Total:");
-        }
-
-        public List<TraderRecord> GetTraders(bool generatePictures = true)
-        {
-            var stat = StatDefOf.TradePriceImprovement;
-            var pawns = Find.CurrentMap.mapPawns.FreeColonists
-                .Where(pawn => pawn.RaceProps.Humanlike && !stat.Worker.IsDisabledFor(pawn))
-                .Select(pawn =>
-                {
-                    var isLeader = ModsConfig.IdeologyActive && pawn == Faction.OfPlayer.leader;
-                    var improvement = pawn.GetStatValue(stat);
-
-                    return new TraderRecord(pawn, pawn.LabelShort,
-                        generatePictures ? () => PortraitsCache.Get(pawn, new Vector2(24, 24), Rot4.South,
-                            ColonistBarColonistDrawer.PawnTextureCameraOffset, 1.28205f) : () => null,
-                        improvement.ToStringPercent(), improvement, isLeader);
-                })
-                .OrderByDescending(x => x.IsLeader)
-                .ThenByDescending(x => x.Improvement)
-                .ToList();
-            return pawns;
         }
 
         public void TryCacheItemsToSell(bool force = false)

@@ -8,6 +8,7 @@ using RimWorld;
 using TD_Find_Lib;
 using Verse;
 using System.Diagnostics;
+using System.Threading;
 using UnityEngine;
 
 namespace MGAutoSell
@@ -20,7 +21,8 @@ namespace MGAutoSell
         ItemAndLabel<long> SellEntries,
         ItemAndLabel<long> PossibleItems,
         ItemAndLabel<long> Quantity,
-        ItemAndLabel<long> BuildCache);
+        ItemAndLabel<long> BuildCache,
+        ItemAndLabel<long> Total);
     public static class CacheUtility
     {
         private static List<Thing> itemCache;
@@ -115,7 +117,7 @@ namespace MGAutoSell
         public static Dictionary<TradeRule, ItemAndLabel<int>> GetRuleCounts(
             this Dictionary<TradeRule, List<Thing>> ruleDictionary)
         {
-            if (!Mod.Settings.showQuantityInsteadOfLabel)
+            if (!Mod.Settings.showQuantityInsteadOfLabel && !Mod.Settings.colorRuleCountsOnWork)
                 return [];
 
             return ruleDictionary.ToDictionary(x => x.Key,
@@ -252,8 +254,11 @@ namespace MGAutoSell
 
             ItemAndLabel<long> BM(long v) => new(v, TimeSpan.FromTicks(v).TotalMilliseconds + "ms");
 
+            var total = benchmarkAllItems + benchmarkJunk + benchmarkSell + benchmarkTraders + benchmarkSellEntries +
+                        benchmarkPossibleItems + benchmarkQuantity + benchmarkBuildCache;
+
             benchmark = new BenchmarkResults(BM(benchmarkAllItems), BM(benchmarkJunk), BM(benchmarkSell), BM(benchmarkTraders),
-                    BM(benchmarkSellEntries), BM(benchmarkPossibleItems), BM(benchmarkQuantity), BM(benchmarkBuildCache));
+                    BM(benchmarkSellEntries), BM(benchmarkPossibleItems), BM(benchmarkQuantity), BM(benchmarkBuildCache), BM(total));
 
             return sellCache;
         }

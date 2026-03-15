@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using MGAutoSell.Filter;
@@ -14,7 +15,9 @@ namespace MGAutoSell
     {
         // TODO Icons in Menu (true)
         public bool scanEveryStack = true;
+
         public bool showAllMatchingItems = true;
+
         public bool showQuantityInsteadOfLabel = true;
         public bool colorRuleCountsOnWork = true;
 #if DEBUG
@@ -257,16 +260,52 @@ namespace MGAutoSell
 
             if (benchmarkResults != null)
             {
-                listing.Label("Find all items on map: " + benchmarkResults.AllItems.Label);
-                listing.Label("Add junk to be sold: " + benchmarkResults.Junk.Label);
-                listing.Label("Match items to rules: " + benchmarkResults.Sell.Label);
-                listing.Label("Select traders: " + benchmarkResults.Traders.Label);
-                listing.Label("Selling entries: " + benchmarkResults.SellEntries.Label);
-                listing.Label("Buying entries: " + benchmarkResults.PossibleItems.Label);
-                listing.Label("Create cache: " + benchmarkResults.BuildCache.Label);
+                var index = 0;
+
+                // AllItems is roughly 0.250ms on my PC, which works out to 1/4 runtime for 1ms. 
+                // But should extend the length as needed if going past 1ms
+                var max = TimeSpan.FromMilliseconds(
+                    Math.Max(1, Math.Round((double)benchmarkResults.AllItems.Value * 4 / TimeSpan.TicksPerMillisecond, 0))).Ticks;
+                DoBenchmarkLine(listing, "Searching map for items", benchmarkResults.AllItems, max, ref index);
+                DoBenchmarkLine(listing, "Add junk to be sold", benchmarkResults.Junk, max, ref index);
+                DoBenchmarkLine(listing, "Match items to rules", benchmarkResults.Sell, max, ref index);
+                DoBenchmarkLine(listing, "Select traders", benchmarkResults.Traders, max, ref index);
+                DoBenchmarkLine(listing, "Sell list", benchmarkResults.SellEntries, max, ref index);
+                if(showAllMatchingItems)
+                    DoBenchmarkLine(listing, $"Regenerate all rules' matching ThingDefs lists", benchmarkResults.PossibleItems, max, ref index);
+                if(showQuantityInsteadOfLabel || colorRuleCountsOnWork)
+                    DoBenchmarkLine(listing, $"Quantity per rule", benchmarkResults.Quantity, max, ref index);
+                DoBenchmarkLine(listing, "Create cache", benchmarkResults.BuildCache, max, ref index);
             }
 
             listing.End();
+        }
+
+        
+        private void DoBenchmarkLine(Listing listing, string label, ItemAndLabel<long> item, long max, ref int index)
+        {
+            var rect = listing.GetRect(30);
+
+            if (index % 2 == 1)
+                Widgets.DrawLightHighlight(rect);
+
+            rect.SplitVertically(rect.width / 2, out var left, out var right);
+
+            var textAnchor = Text.Anchor;
+            Text.Anchor = TextAnchor.MiddleLeft;
+            Widgets.Label(left, label);
+            Text.Anchor = TextAnchor.MiddleRight;
+            Widgets.Label(left, item.Label);
+            Text.Anchor = textAnchor;
+
+            var percent = Math.Clamp((float)item.Value / max, 0, 1);
+
+            var color = GUI.color;
+            GUI.color = Color.Lerp(ColoredText.FactionColor_Neutral, ColoredText.FactionColor_Hostile, percent * 4);
+            GUI.DrawTexture(right.ContractedBy(4).LeftPart(percent), TexUI.FastFillTex);
+            GUI.color = color;
+
+            index++;
         }
     }
 }
