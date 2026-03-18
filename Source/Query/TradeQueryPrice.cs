@@ -4,15 +4,21 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using RimWorld;
+using TD_Find_Lib;
 using Verse;
 
 namespace MGAutoSell.Query
 {
-    public class TradeQueryPrice : TradeQueryWithOption<PriceType>
+    public class TradeQueryPrice : ThingQueryDropDown<PriceType>, ITradeQuery
     {
-        public override bool AppliesDirectlyTo(Tradeable tradeable)
+        public bool AppliesDirectlyTo(Tradeable tradeable, TradeAction action)
         {
-            tradeable.PriceTypeFor()
+            return tradeable.PriceTypeFor(action) == sel;
+        }
+
+        public override string NameFor(PriceType o)
+        {
+            return o.ToString().SplitCamelCase();
         }
 
         public override bool AppliesDirectlyTo(Thing thing)

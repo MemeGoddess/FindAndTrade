@@ -1,13 +1,16 @@
 <Defs>
+    <TD_Find_Lib.ThingQueryDef>
+        <defName>MGAutoSell_Query_TradePrice</defName>
+        <label>trade price</label>
+        <queryClass>MGAutoSell.Query.TradeQueryPrice</queryClass>
+    </TD_Find_Lib.ThingQueryDef>
+
+
     <TD_Find_Lib.ThingQueryCategoryDef>
         <defName>MGAutoSell_ThingQueryCategory</defName>
         <label>Trade</label>
         <subQueries>
-
+            <li>MGAutoSell_Query_TradePrice</li>
         </subQueries>
     </TD_Find_Lib.ThingQueryCategoryDef>
-
-    <TD_Find_Lib.ThingQueryDef>
-
-    </TD_Find_Lib.ThingQueryDef>
 </Defs>

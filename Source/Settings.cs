@@ -66,6 +66,7 @@ namespace MGAutoSell
             _showMinMaxLabelWhereApplicableLabel = "MGAutoSell.Settings.showMinMaxLabelWhereApplicableLabel".Translate();
             _showMinMaxLabelWhereApplicableTooltip = "MGAutoSell.Settings.showMinMaxLabelWhereApplicableTooltip".Translate();
 
+            var test = Enum.GetValues(typeof(PriceType)).OfType<PriceType>().ToList();
             var search = new QuerySearch();
             search.name = "Drugs";
             var drugsQuery = ThingQueryMaker.MakeQuery<ThingQueryThingDefCategory>();

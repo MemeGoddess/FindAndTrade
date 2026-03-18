@@ -9,7 +9,7 @@ namespace MGAutoSell.Query
 {
     public interface ITradeQuery
     {
-        public bool AppliesDirectlyTo(Tradeable tradeable);
+        public bool AppliesDirectlyTo(Tradeable tradeable, TradeAction action);
 
     }
 }

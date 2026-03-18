@@ -312,13 +312,22 @@ namespace MGAutoSell
                 }
                 else
                     items = itemCache
-                    .Where(x => !x.IsCurrency && x.AnyThingNotJunk(out var thing) && rule.search.AppliesTo(thing))
+                    .Where(x => 
+                        !x.IsCurrency && 
+                        x.AnyThingNotJunk(out var thing) && 
+                        rule.search.AppliesTo(thing)
+                        )
                     .Select(x => new TradeEntry(x, x.ThingDef, x.CountHeldBy(Transactor.Colony), x.CountHeldBy(Transactor.Trader)))
                     .ToList();
 
 
                 var toSell = rule.AllowSell
-                    ? items.Where(x => GetCount(rule, x.ThingDef) > rule.Export).ToList()
+                    ? items
+                        .Where(x => 
+                            GetCount(rule, x.ThingDef) > rule.Export &&
+                           (!rule.search.TradeQueries.Any() ||
+                            rule.search.AppliesTo(x.Tradeable, TradeAction.PlayerSells)))
+                        .ToList()
                     : [];
                 toSell.ForEach(x =>
                 {
@@ -358,7 +367,8 @@ namespace MGAutoSell
                     rule.AllowBuy
                         ? items
                             .Where(x =>
-                                GetCount(rule, x.ThingDef) < rule.Import)
+                                GetCount(rule, x.ThingDef) < rule.Import &&
+                          (!rule.search.TradeQueries.Any() || rule.search.AppliesTo(x.Tradeable, TradeAction.PlayerBuys)))
                             .ToList()
                         : [];
                 toBuy.ForEach(x => itemCache.Remove(x.Tradeable));
