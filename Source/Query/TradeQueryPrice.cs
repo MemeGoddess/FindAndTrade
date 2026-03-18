@@ -9,16 +9,18 @@ using Verse;
 
 namespace MGAutoSell.Query
 {
-    public class TradeQueryPrice : ThingQueryDropDown<PriceType>, ITradeQuery
+    public class TradeQueryPrice : ThingQueryIntRange, ITradeQuery
     {
+        public override int Min => (int)PriceType.VeryCheap;
+        public override int Max => (int)PriceType.Exorbitant;
+        //public override Func<int, string> Writer => x => "PriceType"+((PriceType)x);
+
         public bool AppliesDirectlyTo(Tradeable tradeable, TradeAction action)
         {
-            return tradeable.PriceTypeFor(action) == sel;
-        }
-
-        public override string NameFor(PriceType o)
-        {
-            return o.ToString().SplitCamelCase();
+            var priceType = tradeable.PriceTypeFor(action);
+            if (priceType == PriceType.Undefined)
+                return false;
+            return sel.Includes((byte)tradeable.PriceTypeFor(action));
         }
 
         public override bool AppliesDirectlyTo(Thing thing)
