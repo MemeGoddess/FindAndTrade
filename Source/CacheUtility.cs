@@ -41,11 +41,16 @@ namespace MGAutoSell
             var sellDictionary = new Dictionary<ThingDef, int>();
 
             foreach (var rule in rules.Where(x =>
-                         x is { Enabled: true, AllowSell: true } && x.search.Children.queries.Any()))
+                         x is { Enabled: true } && x.search.Children.queries.Any()))
             {
                 var items = allItems.Where(x => rule.search.AppliesTo(x)).ToList();
                 if (items.Any())
-                    ruleDictionary[rule] = items;
+                    ruleDictionary[rule] = items.ToList();
+
+                if(!rule.AllowSell)
+                    continue;
+
+                items.RemoveAll(x => !TradeUtility.EverPlayerSellable(x.def));
 
                 items.ForEach(x => { allItems.Remove(x); });
 
@@ -200,7 +205,11 @@ namespace MGAutoSell
             }
 
             var timestamp = Stopwatch.GetTimestamp();
-            var allItems = TradeUtility.AllLaunchableThingsForTrade(Find.CurrentMap).ToList();
+            //var allItems = TradeUtility.AllLaunchableThingsForTrade(Find.CurrentMap).ToList();
+            var allItems = Find.CurrentMap.listerThings.ThingsInGroup(ThingRequestGroup.HaulableEver).Where(x =>
+                (!x.IsForbidden(Faction.OfPlayer) || x.Map.zoneManager.ZoneAt(x.Position) != null) &&
+                !x.Position.Fogged(x.Map))
+                .ToList();
             allItems.AddRange(TradeUtility.AllSellableColonyPawns(Find.CurrentMap, false).ToList());
 
             if (withBenchmark)

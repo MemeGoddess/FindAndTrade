@@ -51,6 +51,8 @@ namespace MGAutoSell.Filter
             {
                 name = name,
             };
+            ExportBuffer = Export.ToString();
+            ImportBuffer = Import.ToString();
         }
 
         public TradeRule()

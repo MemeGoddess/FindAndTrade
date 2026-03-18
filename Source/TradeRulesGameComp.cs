@@ -21,7 +21,7 @@ namespace MGAutoSell
 
         public override void FinalizeInit()
         {
-            LongEventHandler.ExecuteWhenFinished(() => CacheUtility.itemCache ??= CacheUtility.GenerateItemCache());
+            LongEventHandler.ExecuteWhenFinished(() => tradeRules.GetPossibleItemsList([]));
         }
 
         public override void ExposeData()

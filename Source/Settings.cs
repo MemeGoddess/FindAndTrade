@@ -201,7 +201,7 @@ namespace MGAutoSell
             listing.CheckboxLabeled(_showQuantityInsteadOfLabelLabel, ref showQuantityInsteadOfLabel, _showQuantityInsteadOfLabelTooltip);
             listing.CheckboxLabeled(_colorRuleCountsOnWorkLabel, ref colorRuleCountsOnWork, _colorRuleCountsOnWorkTooltip);
 
-            if (!showQuantityInsteadOfLabel && !colorRuleCountsOnWork)
+            if (!showQuantityInsteadOfLabel)
                 GUI.color = faded;
             listing.CheckboxLabeled(_showMinMaxLabelWhereApplicableLabel, ref showMinMaxLabelWhereApplicable, _showMinMaxLabelWhereApplicableTooltip);
             GUI.color = color;

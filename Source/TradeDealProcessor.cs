@@ -222,11 +222,11 @@ namespace MGAutoSell
                 ThingDefAggregations.TryAdd(item.Key, item.Value);
             }
             // Don't buy more medicine if there's literally heaps in the Hospital already...
-            var itemsOnMap = map.listerThings.AllThings.Where(x => !x.IsForbidden(Faction.OfPlayer) & !x.Position.Fogged(x.Map)).ToList();
+            var itemsOnMap = map.listerThings.AllThings.Where(x => (!x.IsForbidden(Faction.OfPlayer) || x.Map.zoneManager.ZoneAt(x.Position) != null) & !x.Position.Fogged(x.Map)).ToList();
             tradeables.ForEach(x => x.thingsColony.ForEach(y => itemsOnMap.Remove(y)));
-            var countsOnMap = itemsOnMap
-                .GroupBy(x => x.def)
-                .ToDictionary(x => x.Key, x => x.ToList().Sum(y => y.stackCount));
+            //var countsOnMap = itemsOnMap
+            //    .GroupBy(x => x.def)
+            //    .ToDictionary(x => x.Key, x => x.ToList().Sum(y => y.stackCount));
 
 
             foreach (var tradeable in tradeables)
@@ -246,6 +246,7 @@ namespace MGAutoSell
             var pairings = new Dictionary<Tradeable, TradeRule>();
             foreach (var rule in autoTrade.tradeRules.Where(x => x.Enabled && x.search.Children.queries.Any()))
             {
+                
                 Log.Message($"Processing rule {rule.search.name}");
                 var items = new List<TradeEntry>();
                 if (Mod.Settings.scanEveryStack)
@@ -315,6 +316,7 @@ namespace MGAutoSell
                     .Select(x => new TradeEntry(x, x.ThingDef, x.CountHeldBy(Transactor.Colony), x.CountHeldBy(Transactor.Trader)))
                     .ToList();
 
+
                 var toSell = rule.AllowSell
                     ? items.Where(x => GetCount(rule, x.ThingDef) > rule.Export).ToList()
                     : [];
@@ -342,11 +344,21 @@ namespace MGAutoSell
                     sellDictionary[tradeable] += count;
                 }
 
+                foreach (var matchedItem in itemsOnMap
+                             .Where(x => rule.search.AppliesTo(x, x.Map))
+                             .GroupBy(x => x.def))
+                {
+                    var totalStock = matchedItem.Sum(x => x.stackCount);
+                    AddCount(rule, matchedItem.Key, totalStock);
+                }
+
+                ;
+
                 var toBuy =
                     rule.AllowBuy
                         ? items
                             .Where(x =>
-                                GetCount(rule, x.ThingDef) + countsOnMap.TryGetValue(x.ThingDef, 0) < rule.Import)
+                                GetCount(rule, x.ThingDef) < rule.Import)
                             .ToList()
                         : [];
                 toBuy.ForEach(x => itemCache.Remove(x.Tradeable));
@@ -448,20 +460,15 @@ namespace MGAutoSell
 
         private static void AddCount(TradeRule rule, ThingDef def, int amount)
         {
-            int before = 0;
             switch (rule?.Aggregation ?? TradeRuleAggregation.ThingDef)
             {
                 case TradeRuleAggregation.ThingDef:
-                    ThingDefAggregations.TryGetValue(def, out before);
                     if (!ThingDefAggregations.TryAdd(def, amount))
                         ThingDefAggregations[def] += amount;
-                    Log.Warning($"{def.label} {before}->{ThingDefAggregations[def]}");
                     break;
                 case TradeRuleAggregation.Rule:
-                    ThingDefAggregations.TryGetValue(def, out before);
                     if (!TradeRuleAggregations.TryAdd(rule, amount))
                         TradeRuleAggregations[rule] += amount;
-                    Log.Warning($"{def.label} {before}->{ThingDefAggregations[def]}");
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -486,6 +493,7 @@ namespace MGAutoSell
                 return;
 
             var word = silver > 0 ? earned : spent;
+            var actualSilver = Math.Abs(silver);
 
             var buyStringBuilder = new StringBuilder();
             buyStringBuilder.AppendLine(bought);
@@ -497,7 +505,7 @@ namespace MGAutoSell
 
             var traderName = trader?.TraderName ?? "someone";
 
-            var body = "MGAutoSell.Letter".Translate(pawn.Name.ToStringShort, traderName, silver,
+            var body = "MGAutoSell.Letter".Translate(pawn.Name.ToStringShort, traderName, actualSilver,
                 word, buy.Any() ? buyStringBuilder.ToString() : string.Empty, sell.Any() ? sellStringBuilder.ToString() : string.Empty);
 
             var globalTargetInfo = new GlobalTargetInfo(location, pawn.Map);
