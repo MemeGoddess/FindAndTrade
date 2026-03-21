@@ -5,27 +5,33 @@ using System.Text;
 using System.Threading.Tasks;
 using RimWorld;
 using TD_Find_Lib;
+using UnityEngine;
 using Verse;
 
 namespace MGAutoSell.Query
 {
-    public class TradeQueryPrice : ThingQueryIntRange, ITradeQuery
+    public class TradeQueryPrice : ThingQueryWithOption<PriceTypeRange>, ITradeQuery
     {
-        public override int Min => (int)PriceType.VeryCheap;
-        public override int Max => (int)PriceType.Exorbitant;
-        //public override Func<int, string> Writer => x => "PriceType"+((PriceType)x);
+        public TradeQueryPrice()
+        {
+            sel = new PriceTypeRange(PriceType.Normal, PriceType.Normal);
+        }
 
         public bool AppliesDirectlyTo(Tradeable tradeable, TradeAction action)
         {
             var priceType = tradeable.PriceTypeFor(action);
-            if (priceType == PriceType.Undefined)
-                return false;
-            return sel.Includes((byte)tradeable.PriceTypeFor(action));
+            return priceType != PriceType.Undefined && sel.Includes(tradeable.PriceTypeFor(action));
         }
 
         public override bool AppliesDirectlyTo(Thing thing)
         {
             return true;
+        }
+
+        protected override bool DrawMain(Rect rect, bool locked, Rect fullRect)
+        {
+            base.DrawMain(rect, locked, fullRect);
+            return PriceTypeRange.Widget((fullRect.RightHalfClamped(row.FinalX)), this.id, ref _sel);
         }
     }
 }
