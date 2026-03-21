@@ -31,12 +31,12 @@ namespace MGAutoSell
                 .ToArray();
         }
 
-        public bool AppliesTo(Tradeable tradeable, TradeAction action)
+        public bool AppliesTo(TradeContext context)
         {
             return !MatchAllQueries
-                ? TradeQueries.AnyX(x => (x as ThingQuery)?.Enabled is not false && x.AppliesDirectlyTo(tradeable, action),
+                ? TradeQueries.AnyX(x => (x as ThingQuery)?.Enabled is not false && x.AppliesDirectlyTo(context),
                     Children.anyMin)
-                : TradeQueries.All(x => x is ThingQuery { Enabled: false } || x.AppliesDirectlyTo(tradeable, action));
+                : TradeQueries.All(x => x is ThingQuery { Enabled: false } || x.AppliesDirectlyTo(context));
         }
     }
 }

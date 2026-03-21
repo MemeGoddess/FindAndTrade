@@ -17,10 +17,10 @@ namespace MGAutoSell.Query
             sel = new PriceTypeRange(PriceType.Normal, PriceType.Normal);
         }
 
-        public bool AppliesDirectlyTo(Tradeable tradeable, TradeAction action)
+        public bool AppliesDirectlyTo(TradeContext context)
         {
-            var priceType = tradeable.PriceTypeFor(action);
-            return priceType != PriceType.Undefined && sel.Includes(tradeable.PriceTypeFor(action));
+            var priceType = context.Tradeable.PriceTypeFor(context.Action);
+            return priceType != PriceType.Undefined && sel.Includes(priceType);
         }
 
         public override bool AppliesDirectlyTo(Thing thing)

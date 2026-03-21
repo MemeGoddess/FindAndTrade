@@ -8,6 +8,7 @@ using HarmonyLib;
 using LudeonTK;
 using MGAutoSell.Extensions;
 using MGAutoSell.Filter;
+using MGAutoSell.Query;
 using RimWorld;
 using RimWorld.Planet;
 using UnityEngine;
@@ -326,7 +327,7 @@ namespace MGAutoSell
                         .Where(x => 
                             GetCount(rule, x.ThingDef) > rule.Export &&
                            (!rule.search.TradeQueries.Any() ||
-                            rule.search.AppliesTo(x.Tradeable, TradeAction.PlayerSells)))
+                            rule.search.AppliesTo(new TradeContext(deal, x.Tradeable, TradeAction.PlayerSells))))
                         .ToList()
                     : [];
                 toSell.ForEach(x =>
@@ -368,7 +369,7 @@ namespace MGAutoSell
                         ? items
                             .Where(x =>
                                 GetCount(rule, x.ThingDef) < rule.Import &&
-                          (!rule.search.TradeQueries.Any() || rule.search.AppliesTo(x.Tradeable, TradeAction.PlayerBuys)))
+                          (!rule.search.TradeQueries.Any() || rule.search.AppliesTo(new TradeContext(deal, x.Tradeable, TradeAction.PlayerSells))))
                             .ToList()
                         : [];
                 toBuy.ForEach(x => itemCache.Remove(x.Tradeable));

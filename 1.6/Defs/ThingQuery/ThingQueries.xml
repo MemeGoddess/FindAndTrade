@@ -5,12 +5,19 @@
         <queryClass>MGAutoSell.Query.TradeQueryPrice</queryClass>
     </TD_Find_Lib.ThingQueryDef>
 
+    <TD_Find_Lib.ThingQueryDef>
+        <defName>MGAutoSell_Query_TraderKind</defName>
+        <label>trader kind</label>
+        <queryClass>MGAutoSell.Query.TradeQueryTraderType</queryClass>
+    </TD_Find_Lib.ThingQueryDef>
+
 
     <TD_Find_Lib.ThingQueryCategoryDef>
         <defName>MGAutoSell_ThingQueryCategory</defName>
         <label>Trade</label>
         <subQueries>
             <li>MGAutoSell_Query_TradePrice</li>
+            <li>MGAutoSell_Query_TraderKind</li>
         </subQueries>
     </TD_Find_Lib.ThingQueryCategoryDef>
 </Defs>

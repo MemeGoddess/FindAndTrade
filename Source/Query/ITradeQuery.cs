@@ -9,7 +9,9 @@ namespace MGAutoSell.Query
 {
     public interface ITradeQuery
     {
-        public bool AppliesDirectlyTo(Tradeable tradeable, TradeAction action);
+        public bool AppliesDirectlyTo(TradeContext context);
 
     }
+
+    public record TradeContext(TradeDeal TradeDeal, Tradeable Tradeable, TradeAction Action);
 }
