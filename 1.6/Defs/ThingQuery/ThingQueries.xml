@@ -11,6 +11,12 @@
         <queryClass>MGAutoSell.Query.TradeQueryTraderType</queryClass>
     </TD_Find_Lib.ThingQueryDef>
 
+    <TD_Find_Lib.ThingQueryDef>
+        <defName>MGAutoSell_Query_TraderOrbital</defName>
+        <label>Is orbital trader</label>
+        <queryClass>MGAutoSell.Query.TradeQueryTraderOrbital</queryClass>
+    </TD_Find_Lib.ThingQueryDef>
+
 
     <TD_Find_Lib.ThingQueryCategoryDef>
         <defName>MGAutoSell_ThingQueryCategory</defName>
@@ -18,6 +24,7 @@
         <subQueries>
             <li>MGAutoSell_Query_TradePrice</li>
             <li>MGAutoSell_Query_TraderKind</li>
+            <li>MGAutoSell_Query_TraderOrbital</li>
         </subQueries>
     </TD_Find_Lib.ThingQueryCategoryDef>
 </Defs>

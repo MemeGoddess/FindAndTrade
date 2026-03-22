@@ -362,14 +362,12 @@ namespace MGAutoSell
                     AddCount(rule, matchedItem.Key, totalStock);
                 }
 
-                ;
-
                 var toBuy =
                     rule.AllowBuy
                         ? items
                             .Where(x =>
                                 GetCount(rule, x.ThingDef) < rule.Import &&
-                          (!rule.search.TradeQueries.Any() || rule.search.AppliesTo(new TradeContext(deal, x.Tradeable, TradeAction.PlayerSells))))
+                          (!rule.search.TradeQueries.Any() || rule.search.AppliesTo(new TradeContext(deal, x.Tradeable, TradeAction.PlayerBuys))))
                             .ToList()
                         : [];
                 toBuy.ForEach(x => itemCache.Remove(x.Tradeable));
