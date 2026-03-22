@@ -8,6 +8,7 @@ using HarmonyLib;
 using LudeonTK;
 using MGAutoSell.Extensions;
 using MGAutoSell.Filter;
+using MGAutoSell.HarmonyPatches;
 using MGAutoSell.Query;
 using RimWorld;
 using RimWorld.Planet;

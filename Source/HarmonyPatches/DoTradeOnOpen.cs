@@ -3,7 +3,7 @@ using RimWorld;
 using System;
 using Verse;
 
-namespace MGAutoSell
+namespace MGAutoSell.HarmonyPatches
 {
     [HarmonyPatch(typeof(Dialog_Trade), nameof(Dialog_Trade.PostOpen))]
     public static class DoTradeOnOpen
