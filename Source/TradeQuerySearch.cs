@@ -16,5 +16,7 @@ namespace MGAutoSell
             base.Changed();
             AllItems = this.GetPossibleItems();
         }
+
+
     }
 }

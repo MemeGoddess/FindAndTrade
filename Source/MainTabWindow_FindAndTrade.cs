@@ -334,8 +334,15 @@ namespace MGAutoSell
             drawerListing.EndScrollView(ref height);
 
             var controlsRect = panel.BottomPartPixels(Text.LineHeight);
-            if (Widgets.ButtonImage(controlsRect.LeftPartPixels(Text.LineHeight), FindTex.GreyPlus))
+            controlsRect.SplitVerticallyWithMargin(out var createRuleRect, out controlsRect, out _, 4f, leftWidth: Text.LineHeight);
+            controlsRect.SplitVerticallyWithMargin(out var importRect, out controlsRect, out _, 4f, leftWidth: Text.LineHeight);
+            controlsRect.SplitVerticallyWithMargin(out var exportRect, out controlsRect, out _, 4f, leftWidth: Text.LineHeight);
+            if (Widgets.ButtonImage(createRuleRect, FindTex.GreyPlus))
                 CreateRule();
+            var buttonColor = new Color(1, 1, 1, 0.6f);
+            Widgets.ButtonImage(importRect, FindTex.Import, buttonColor);
+            Widgets.ButtonImage(exportRect, FindTex.Export, buttonColor);
+
 #if DEBUG
             var color = GUI.color;
             GUI.color = _fadedColor;

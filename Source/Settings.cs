@@ -11,6 +11,7 @@ using Color = UnityEngine.Color;
 
 namespace MGAutoSell
 {
+    public record SavedSearches(string Hash, TradeRulesGroup TradeRules);
     public class Settings : ModSettings
     {
         public Dictionary<string, Vector2> LabelSizeCache = [];
@@ -142,6 +143,10 @@ namespace MGAutoSell
             _exampleTradeRules.Add(lowQualityArt);
 
             _exampleTradeRulesCache = new ItemsToSell(null, null, null, null, itemRules);
+
+            // Save search caching
+
+
         }
 
         public override void ExposeData()
