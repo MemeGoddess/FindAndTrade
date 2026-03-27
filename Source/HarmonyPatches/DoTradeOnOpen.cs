@@ -16,6 +16,9 @@ namespace MGAutoSell.HarmonyPatches
                 if (deal == null) return;
 
                 TradeDealProcessor.DoTradeDeal(deal);
+
+                if (Mod.Settings.rememberManualTrade)
+                    Current.Game.GetComponent<TradeRulesGameComp>().traders.Add(TradeSession.trader);
             }
             catch (Exception ex)
             {

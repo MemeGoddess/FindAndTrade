@@ -38,6 +38,9 @@
     <MGAutoSell.Settings.scanEveryStackLabel>Scan Every Stack</MGAutoSell.Settings.scanEveryStackLabel>
     <MGAutoSell.Settings.scanEveryStackTooltip>Scan every stack of items on the map instead of just the first Thing per trade row.</MGAutoSell.Settings.scanEveryStackTooltip>
 
+    <MGAutoSell.Settings.rememberManualTradeLabel>Mark trader when manually trading</MGAutoSell.Settings.rememberManualTradeLabel>
+    <MGAutoSell.Settings.rememberManualTradeTooltip>When manually trading, mark them so that they won't be automatically traded with again later.</MGAutoSell.Settings.rememberManualTradeTooltip>
+
     <MGAutoSell.Settings.showAllMatchingItemsLabel>Show All Matching ThingDefs</MGAutoSell.Settings.showAllMatchingItemsLabel>
     <MGAutoSell.Settings.showAllMatchingItemsTooltip>Display all items that match the trade rules, not just selling.\n\nA rule's list is regenerated when the rule changes.</MGAutoSell.Settings.showAllMatchingItemsTooltip>
 
