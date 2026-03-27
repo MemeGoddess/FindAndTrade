@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using MGAutoSell.Query;
 using RimWorld;
 using TD_Find_Lib;
@@ -13,26 +14,32 @@ namespace MGAutoSell
     public class TradeQuerySearch : QuerySearch
     {
         public List<ThingDef> AllItems;
-        public ITradeQuery[] TradeQueries = [];
+        [CanBeNull] private ITradeQuery[] _tradeQueries;
+
+        public ITradeQuery[] TradeQueries => _tradeQueries ??= children.queries
+            .OfType<ITradeQuery>()
+            .ToArray();
 
         public TradeQuerySearch()
         {
-            TradeQueries = children.queries
-                .OfType<ITradeQuery>()
-                .ToArray();
+
         }
 
         public override void Changed()
         {
             base.Changed();
             AllItems = this.GetPossibleItems();
-            TradeQueries = children.queries
+            _tradeQueries = children.queries
                 .OfType<ITradeQuery>()
                 .ToArray();
         }
 
         public bool AppliesTo(TradeContext context)
         {
+            _tradeQueries ??= children.queries
+                .OfType<ITradeQuery>()
+                .ToArray();
+
             return !MatchAllQueries
                 ? TradeQueries.AnyX(x => (x as ThingQuery)?.Enabled is not false && x.AppliesDirectlyTo(context),
                     Children.anyMin)

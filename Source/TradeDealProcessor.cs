@@ -142,9 +142,16 @@ namespace MGAutoSell
         public static void DoTradeShips(Pawn socialPawn)
         {
             var comp = Current.Game.GetComponent<TradeRulesGameComp>();
-            var ships = socialPawn.Map.passingShipManager.passingShips;
+            var ships = socialPawn.Map.passingShipManager.passingShips.ToList();
 
-            ships.RemoveAll(x => comp.traders.Contains(x as ITrader));
+            ships.RemoveAll(x =>
+            {
+                if (x is not ITrader trader)
+                    return true;
+
+                return comp.traders.Contains(trader) ||
+                       !socialPawn.CanTradeWith(trader.Faction, trader.TraderKind);
+            });
 
             if(!ships.Any()) 
                 return;
@@ -207,7 +214,7 @@ namespace MGAutoSell
 
             var sellDictionary = new Dictionary<Tradeable, int>();
             var buyDictionary = new Dictionary<Tradeable, int>();
-            var itemCache = tradeables.Where(x => x.TraderWillTrade).ToList();
+            var itemCache = tradeables.Where(x => x.TraderWillTrade && x.ThingDef != null).ToList();
 
             if (!GroupedTrading)
             {
@@ -215,6 +222,9 @@ namespace MGAutoSell
                 TradeRuleAggregations.Clear();
                 ExtrasOnMap.Clear();
             }
+
+            if(!itemCache.Any())
+                return;
 
             var itemsToAdd = itemCache.GroupBy(x => x.ThingDef).ToDictionary(x => x.Key,
                 x => x.ToList().Sum(x => x.CountHeldBy(Transactor.Colony)));
@@ -503,7 +513,8 @@ namespace MGAutoSell
                 return;
 
             var word = silver > 0 ? earned : spent;
-            var actualSilver = Math.Abs(silver);
+            float actualSilver = Math.Abs(silver);
+            
 
             var buyStringBuilder = new StringBuilder();
             buyStringBuilder.AppendLine(bought);
@@ -513,9 +524,9 @@ namespace MGAutoSell
             sellStringBuilder.AppendLine(sold);
             sellStringBuilder.AppendJoin("\n", sell.Select(x => $"{x.label} x{Math.Abs(x.count)}"));
 
-            var traderName = trader?.TraderName ?? "someone";
+            var traderName = (trader?.TraderName).Colorize(ColoredText.NameColor) ?? "someone".Colorize(Color.magenta);
 
-            var body = "MGAutoSell.Letter".Translate(pawn.Name.ToStringShort, traderName, actualSilver,
+            var body = "MGAutoSell.Letter".Translate(pawn.Name.ToStringShort, $"{traderName}".Colorize(trader?.Faction.PlayerRelationKind.GetColor() ?? Color.magenta), actualSilver.ToStringMoney().Colorize(ColoredText.CurrencyColor),
                 word, buy.Any() ? buyStringBuilder.ToString() : string.Empty, sell.Any() ? sellStringBuilder.ToString() : string.Empty);
 
             var globalTargetInfo = new GlobalTargetInfo(location, pawn.Map);
