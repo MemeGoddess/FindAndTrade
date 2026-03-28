@@ -513,21 +513,35 @@ namespace MGAutoSell
                 return;
 
             var word = silver > 0 ? earned : spent;
-            float actualSilver = Math.Abs(silver);
+            float absSilver = Math.Abs(silver);
             
 
             var buyStringBuilder = new StringBuilder();
-            buyStringBuilder.AppendLine(bought);
-            buyStringBuilder.AppendJoin("\n", buy.Select(x => $"{x.label} x{Math.Abs(x.count)}"));
+            buyStringBuilder.AppendLine(bought.Colorize(ColoredText.TipSectionTitleColor));
+            buyStringBuilder.AppendJoin("\n", buy.Select(x => $"  {x.label} x{Math.Abs(x.count)}"));
 
             var sellStringBuilder = new StringBuilder();
-            sellStringBuilder.AppendLine(sold);
-            sellStringBuilder.AppendJoin("\n", sell.Select(x => $"{x.label} x{Math.Abs(x.count)}"));
+            sellStringBuilder.AppendLine(sold.Colorize(ColoredText.TipSectionTitleColor));
+            sellStringBuilder.AppendJoin("\n", sell.Select(x => $"  {x.label} x{Math.Abs(x.count)}"));
 
-            var traderName = (trader?.TraderName).Colorize(ColoredText.NameColor) ?? "someone".Colorize(Color.magenta);
+            var pawnName = pawn.Name.ToStringShort.Colorize(ColoredText.NameColor);
+            var traderColor = (trader.Faction?.PlayerRelationKind ?? FactionRelationKind.Neutral).GetColor();
+            var traderName = trader?.TraderName?.Colorize(traderColor) ?? "someone".Colorize(Color.magenta);
+            var silverLabel = absSilver.ToStringMoney().Colorize(ColoredText.CurrencyColor);
+            var buySection = buy.Any()
+                ? buyStringBuilder.ToString()
+                : string.Empty;
+            var sellSection = sell.Any() ? sellStringBuilder.ToString() : string.Empty;
 
-            var body = "MGAutoSell.Letter".Translate(pawn.Name.ToStringShort, $"{traderName}".Colorize(trader?.Faction.PlayerRelationKind.GetColor() ?? Color.magenta), actualSilver.ToStringMoney().Colorize(ColoredText.CurrencyColor),
-                word, buy.Any() ? buyStringBuilder.ToString() : string.Empty, sell.Any() ? sellStringBuilder.ToString() : string.Empty);
+
+            var body = "MGAutoSell.Letter".Translate(
+                pawnName,
+                traderName, 
+                silverLabel,
+                word, 
+                buySection, 
+                sellSection
+                );
 
             var globalTargetInfo = new GlobalTargetInfo(location, pawn.Map);
             
