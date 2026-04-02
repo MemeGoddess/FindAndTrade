@@ -243,8 +243,8 @@ namespace MGAutoSell
 
             foreach (var tradeable in tradeables)
             {
-                var junk = tradeable.thingsColony.Where(x =>
-                    x.Map.designationManager.DesignationOn(x, MGDesignatorDefOf.MGAutoSell) != null).ToList();
+                var junk = tradeable.thingsColony.Where(x => 
+                    x.Map?.designationManager?.DesignationOn(x, MGDesignatorDefOf.MGAutoSell) != null).ToList();
 
                 if(!junk.Any())
                     continue;
@@ -437,7 +437,7 @@ namespace MGAutoSell
             }
 
             // Sell marked items first
-            deal.AllTradeables.ForEach(x => x.thingsColony = x.thingsColony.OrderBy(x => x.Map.designationManager.DesignationOn(x, MGDesignatorDefOf.MGAutoSell) == null).ToList());
+            deal.AllTradeables.ForEach(x => x.thingsColony = x.thingsColony.OrderBy(x => x.Map?.designationManager.DesignationOn(x, MGDesignatorDefOf.MGAutoSell) == null).ToList());
         }
 
         private static void NormalizeWith(this TradeDeal deal, List<SellItem> list, Dictionary<Tradeable, TradeRule> pairings, int gap)

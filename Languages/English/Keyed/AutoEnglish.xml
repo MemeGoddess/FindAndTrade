@@ -31,6 +31,9 @@
 
     <MGAutoSell.SellHeader>Items</MGAutoSell.SellHeader>
 
+    <MGAutoSell.Caravan.AutomaticallyTradeLabel>Automatically Trade</MGAutoSell.Caravan.AutomaticallyTradeLabel>
+    <MGAutoSell.Caravan.AutomaticallyTradeDescription>When enabled, caravans and shuttles will automatically be dispatched to this settlement to trade according to the rules.</MGAutoSell.Caravan.AutomaticallyTradeDescription>
+
     <MGAutoSell.Settings.Benchmark>Benchmark</MGAutoSell.Settings.Benchmark>
     <MGAutoSell.Settings.BenchmarkDisabled>Load a save/map to enable benchmarking.</MGAutoSell.Settings.BenchmarkDisabled>
     <MGAutoSell.Settings.BenchmarkDisabledNoDev>Enable dev mode to benchmark.</MGAutoSell.Settings.BenchmarkDisabledNoDev>
