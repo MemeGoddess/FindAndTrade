@@ -333,6 +333,9 @@ namespace MGAutoSell
                     .ToList();
 
 
+                if(rule.Aggregation == TradeRuleAggregation.Rule)
+                    items.ForEach(x => AddCount(rule, x.ThingDef, x.ColonyCount));
+
                 var toSell = rule.AllowSell
                     ? items
                         .Where(x => 
