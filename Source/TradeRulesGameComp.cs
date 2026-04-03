@@ -10,6 +10,7 @@ using Verse;
 
 namespace MGAutoSell
 {
+    public record SettlementToTradeWith(float Distance, float Silver, float FuelRequirement);
     public class TradeRulesGameComp : GameComponent
     {
         public TradeRulesGroup tradeRules = new();
@@ -119,13 +120,28 @@ namespace MGAutoSell
             var distances = comp.GetDistances(shuttle.Map,
                 maxDistance: layer =>
                 {
-                    var maxDistance = shuttle.LaunchableComp.MaxLaunchDistanceAtFuelLevel(shuttle.FuelLevel, layer);
+                    var maxDistance = shuttle.LaunchableComp.MaxLaunchDistanceAtFuelLevel(fuelWithBuffer, layer);
                     if (shuttle.LaunchableComp.Props.fixedLaunchDistanceMax >= 0)
                         maxDistance = Mathf.Min(maxDistance, shuttle.LaunchableComp.Props.fixedLaunchDistanceMax);
                     return maxDistance;
                 },
-                settlementPredicate: settlement => settlement.TradeCurrency != TradeCurrency.Favor && settlement.trader.StockListForReading.FirstOrDefault(x => x.def == ThingDefOf.Silver)?.stackCount < 200);
+                settlementPredicate: settlement => settlement.TradeCurrency == TradeCurrency.Favor || settlement.trader.StockListForReading.FirstOrDefault(x => x.def == ThingDefOf.Silver)?.stackCount < 200);
 
+            // Ok, what would they actually buy?
+
+            var sales =
+                distances.ToDictionary(x => x.Key, x =>
+                {
+                    var total = cache.Items.Sum(y => x.Key.trader.TraderKind.WillTrade(y.Item) ? y.Total.Value : 0);
+                    var traderSilver = x.Key.trader.StockListForReading.FirstOrDefault(x => x.def == ThingDefOf.Silver)
+                        ?.stackCount ?? 0f;
+                    return total > traderSilver ? traderSilver : total;
+                });
+
+            var fuelCost = distances.ToDictionary(x => x.Key,
+                x => shuttle.LaunchableComp.FuelNeededToLaunchAtDist(x.Value, x.Key.Tile.Layer));
+            
+            // Find best
 
 
             return null;

@@ -1,6 +1,6 @@
 <LanguageData>
     <MGAutoSell.AggByDef>Count by ThingDef</MGAutoSell.AggByDef>
-    <MGAutoSell.AggByRule>Count matching stacks</MGAutoSell.AggByRule>
+    <MGAutoSell.AggByRule>Count by Rule</MGAutoSell.AggByRule>
 
     <MGAutoSell.Earned>earned</MGAutoSell.Earned>
     <MGAutoSell.Spent>spent</MGAutoSell.Spent>
