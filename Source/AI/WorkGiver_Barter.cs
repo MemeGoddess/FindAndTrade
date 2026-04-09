@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
+using RimWorld.Planet;
 using Verse;
 using Verse.AI;
 
@@ -18,7 +19,7 @@ namespace MGAutoSell.AI
         }
 
         public override Job JobOnThing(Pawn pawn, Thing t, bool forced = false) => 
-            new(AIDefOf.MGJobDriver_Barter, t);
+            new(AIDefOf.MGJob_Barter, t, new Settlement().Tile);
 
         public override bool HasJobOnThing(Pawn pawn, Thing t, bool forced = false)
         {

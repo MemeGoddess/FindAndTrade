@@ -199,7 +199,33 @@ namespace MGAutoSell
             }
         }
 
-        public static void DoTradeDeal(TradeDeal deal)
+        public static void SimulateTrade(Pawn socialPawn, ITrader trader, bool doBuy = true)
+        {
+            if (!trader.CanTradeNow)
+                return;
+
+            var comp = Current.Game.GetComponent<TradeRulesGameComp>();
+
+            TradeSession.SetupWith(trader, socialPawn, false);
+            var deal = TradeSession.deal;
+            DoTradeDeal(deal);
+            comp.traders.Add(trader);
+            var silver = deal.CurrencyTradeable.CountToTransfer;
+
+            var buy = deal.AllTradeables
+                .Where(x => x.CountToTransfer > 0 && !x.IsCurrency)
+                .Select(x => (x.ThingDef.label, x.CountToTransfer))
+                .ToList();
+            var sell = deal.AllTradeables
+                .Where(x => x.CountToTransfer < 0 && !x.IsCurrency)
+                .Select(x => (x.ThingDef.label, x.CountToTransfer))
+                .ToList();
+
+            if (!buy.Any() && !sell.Any())
+                return;
+        }
+
+        public static void DoTradeDeal(TradeDeal deal, bool doBuy = true)
         {
             var map = TradeSession.playerNegotiator?.Map;
             if (map == null) return;
@@ -377,7 +403,7 @@ namespace MGAutoSell
                 }
 
                 var toBuy =
-                    rule.AllowBuy
+                    doBuy && rule.AllowBuy
                         ? items
                             .Where(x =>
                                 GetCount(rule, x.ThingDef) < rule.Import &&

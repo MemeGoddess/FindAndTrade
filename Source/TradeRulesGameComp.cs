@@ -10,7 +10,15 @@ using Verse;
 
 namespace MGAutoSell
 {
-    public record SettlementToTradeWith(float Distance, float Silver, float FuelRequirement);
+    public record TradeRoute(Settlement Settlement, float Distance, float Silver, float FuelRequirement, SettlementTradePriority Priority);
+
+    public enum SettlementTradePriority
+    {
+        Backup,
+        Low,
+        Medium,
+        High
+    }
     public class TradeRulesGameComp : GameComponent
     {
         public TradeRulesGroup tradeRules = new();
@@ -21,8 +29,10 @@ namespace MGAutoSell
 
         public Dictionary<Map, ItemsToSell> SellCache = [];
         public Dictionary<Map, Pawn> SellerOverride = [];
+        public Dictionary<Map, TradeRoute> NextTradeRoute = [];
+
         private Queue<Map> cacheOrder = new();
-        private int tickWait => 3600 / UnityEngine.Mathf.Max(SellCache.Count, 1);
+        private int tickWait => 2500 / UnityEngine.Mathf.Max(SellCache.Count, 1);
         private int nextTick = -1;
 
         public TradeRulesGameComp(Game game)
@@ -79,22 +89,12 @@ namespace MGAutoSell
                 var comp = Find.World.GetComponent<SettlementTracker>();
                 var shuttle = comp.GetBestForMap(map);
 
-                if (shuttle != null && shuttle.FuelLevel >= shuttle.LaunchableComp.Props.minFuelCost)
+                var tradeRoute = GetTradeRoute(shuttle, cache, comp);
+                if(tradeRoute != null)
                 {
-                    var total = cache.TotalSilver.Value;
-                    var fuelWithBuffer = shuttle.FuelLevel - 5;
-
-                    var distances = comp.GetDistances(map, maxDistance: layer =>
-                    {
-                        var maxDistance = shuttle.LaunchableComp.MaxLaunchDistanceAtFuelLevel(shuttle.FuelLevel, layer);
-                        if (shuttle.LaunchableComp.Props.fixedLaunchDistanceMax >= 0)
-                            maxDistance = Mathf.Min(maxDistance, shuttle.LaunchableComp.Props.fixedLaunchDistanceMax);
-                        return maxDistance;
-                    });
-
-
+                    Log.Warning($"{tradeRoute.Settlement.LabelShortCap} will buy {tradeRoute.Silver} worth");
+                    NextTradeRoute[map] = tradeRoute;
                 }
-
             }
             finally
             {
@@ -102,7 +102,7 @@ namespace MGAutoSell
             }
         }
 
-        private Settlement GetTradeRoute(Building_PassengerShuttle shuttle, ItemsToSell cache, SettlementTracker comp)
+        private TradeRoute GetTradeRoute(Building_PassengerShuttle shuttle, ItemsToSell cache, SettlementTracker comp)
         {
             if (shuttle == null)
                 return null;
@@ -125,26 +125,43 @@ namespace MGAutoSell
                         maxDistance = Mathf.Min(maxDistance, shuttle.LaunchableComp.Props.fixedLaunchDistanceMax);
                     return maxDistance;
                 },
-                settlementPredicate: settlement => settlement.TradeCurrency == TradeCurrency.Favor || settlement.trader.StockListForReading.FirstOrDefault(x => x.def == ThingDefOf.Silver)?.stackCount < 200);
+                settlementPredicate: settlement => 
+                    traders.Contains(settlement) || 
+                    settlement.TradeCurrency == TradeCurrency.Favor || 
+                    settlement.trader.StockListForReading.FirstOrDefault(x => x.def == ThingDefOf.Silver)?.stackCount < 200);
 
-            // Ok, what would they actually buy?
+            if (!distances.Any())
+                return null;
 
-            var sales =
-                distances.ToDictionary(x => x.Key, x =>
+            var routes = new List<TradeRoute>();
+            foreach (var (settlement, distance) in distances)
+            {
+                var traderTotal =
+                    cache.Items.Sum(y => settlement.trader.TraderKind.WillTrade(y.Item) ? y.Total.Value : 0);
+                var traderSilver = settlement.trader.StockListForReading.FirstOrDefault(x => x.def == ThingDefOf.Silver)
+                    ?.stackCount ?? 0f;
+                var sales = traderTotal > traderSilver ? traderSilver : total;
+
+                var fuelCost = shuttle.LaunchableComp.FuelNeededToLaunchAtDist(distance, settlement.Tile.Layer);
+
+                var ratio = sales / fuelCost;
+
+                var priority = ratio switch
                 {
-                    var total = cache.Items.Sum(y => x.Key.trader.TraderKind.WillTrade(y.Item) ? y.Total.Value : 0);
-                    var traderSilver = x.Key.trader.StockListForReading.FirstOrDefault(x => x.def == ThingDefOf.Silver)
-                        ?.stackCount ?? 0f;
-                    return total > traderSilver ? traderSilver : total;
-                });
+                    > 4 when traderSilver > sales => SettlementTradePriority.High,
+                    >= 4 => SettlementTradePriority.Medium,
+                    > 2 => SettlementTradePriority.Low,
+                    _ => SettlementTradePriority.Backup
+                };
 
-            var fuelCost = distances.ToDictionary(x => x.Key,
-                x => shuttle.LaunchableComp.FuelNeededToLaunchAtDist(x.Value, x.Key.Tile.Layer));
-            
-            // Find best
+                routes.Add(new TradeRoute(settlement, distance, sales, fuelCost, priority));
+            }
 
+            routes = [.. routes
+                .OrderByDescending(x => x.Priority)
+                .ThenByDescending(x => x.Silver)];
 
-            return null;
+            return routes.FirstOrDefault();
         }
 
         public override void ExposeData()
