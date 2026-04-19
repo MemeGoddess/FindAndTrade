@@ -39,7 +39,7 @@ namespace MGAutoSell.AI
                         pawn.CanTradeWith(tradeShip.Faction, ((ITrader)tradeShip).TraderKind) &&
                         (forced || !comp.traders.Contains(tradeShip)));
                 case Pawn trader:
-                    return pawn.CanTradeWith(trader.Faction, trader.TraderKind) && (forced || !comp.traders.Contains(trader));
+                    return trader.CanTradeNow && pawn.CanTradeWith(trader.Faction, trader.TraderKind) && pawn.CanReserveAndReach(trader, PathEndMode.Touch, Danger.Some) && (forced || !comp.traders.Contains(trader));
                 default:
                     return false;
             }

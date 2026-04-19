@@ -511,23 +511,8 @@ namespace MGAutoSell
             if (!shouldUpdate)
                 return;
 
-            CacheItemsToSell();
-        }
-
-        public void CacheItemsToSell(bool withBenchmark = false)
-        {
-#if DEBUG
-            var timestamp = Stopwatch.GetTimestamp();
-
-#endif
-            comp.SellCache[Find.CurrentMap] = CacheUtility.Cache(comp, Find.CurrentMap, out _, SellerOverride, withBenchmark);
-
+            comp.SellCache[Find.CurrentMap] = CacheUtility.Cache(comp, Find.CurrentMap, out _, SellerOverride );
             nextQuickCache = DateTime.UtcNow.AddSeconds(1).Ticks;
-
-#if DEBUG
-            var duration = Stopwatch.GetTimestamp() - timestamp;
-            Log.Message($"Generated list in {duration}ts");
-#endif
         }
 
         public TradeRule SelectedTradeRule;

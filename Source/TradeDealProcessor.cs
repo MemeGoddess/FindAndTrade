@@ -73,7 +73,6 @@ namespace MGAutoSell
             StartGroupedTrading();
             foreach (var passingShip in ships)
             {
-                Log.Message($"Trading with {(passingShip as TradeShip).TraderName}");
                 TradeSession.SetupWith(passingShip as TradeShip, socialPawn, false);
                 var deal = TradeSession.deal;
                 DoTradeDeal(deal);
@@ -285,7 +284,6 @@ namespace MGAutoSell
             foreach (var rule in autoTrade.tradeRules.Where(x => x.Enabled && x.search.Children.queries.Any()))
             {
                 
-                Log.Message($"Processing rule {rule.search.name}");
                 var items = new List<TradeEntry>();
                 if (Mod.Settings.scanEveryStack)
                 {
