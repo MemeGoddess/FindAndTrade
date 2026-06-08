@@ -10,6 +10,7 @@ namespace MGAutoSell
         internal static readonly Texture2D OptionsGeneral = ContentFinder<Texture2D>.Get("UI/Icons/Options/OptionsGeneral");
         internal static readonly Texture2D JunkGizmo = ContentFinder<Texture2D>.Get("JunkGizmo");
         internal static readonly Texture2D FloatRangeSliderTex = ContentFinder<Texture2D>.Get("UI/Widgets/RangeSlider");
+        internal static readonly Texture2D History = ContentFinder<Texture2D>.Get("UI/buttons/mainbuttons/history");
 
     }
 }

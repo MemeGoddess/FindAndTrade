@@ -12,6 +12,7 @@ namespace MGAutoSell
     {
         public string TraderName;
         public Faction Faction;
+        public long Tick;
 
         public List<TradedItem> Sold = new();
         public List<TradedItem> Bought = new();
@@ -26,12 +27,14 @@ namespace MGAutoSell
             Faction = faction;
             Sold = sell;
             Bought = buy;
+            Tick = Find.TickManager.TicksGame;
         }
 
         public void ExposeData()
         {
             Scribe_Values.Look(ref TraderName, nameof(TraderName));
             Scribe_References.Look(ref Faction, nameof(Faction));
+            Scribe_Values.Look(ref Tick, nameof(Tick));
             Scribe_Collections.Look(ref Sold, nameof(Sold), LookMode.Deep);
             Scribe_Collections.Look(ref Bought, nameof(Bought), LookMode.Deep);
             Sold ??= [];

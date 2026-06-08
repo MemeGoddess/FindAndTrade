@@ -48,6 +48,7 @@ namespace MGAutoSell
         Vector2 listerScroll = Vector2.zero;
         Vector2 settingScroll = Vector2.zero;
         Vector2 sellScroll = Vector2.zero;
+        Vector2 historyScroll = Vector2.zero;
         private string previousRenderTime;
 
         private string title = $"<i>{"MGAutoSell.Title".Translate()}</i>";
@@ -127,6 +128,13 @@ namespace MGAutoSell
                     DrawSettingsTab(body);
                 }
                     break;
+                case WindowTab.History:
+                {
+                    leftPanel.SplitHorizontally(30, out var header, out var body);
+                    DrawTitle(header);
+                    DrawHistoryTab(body);
+                }
+                    break;
                 case WindowTab.Rules:
                 default:
                 {
@@ -134,7 +142,7 @@ namespace MGAutoSell
                     DrawTitle(header, true);
                     DrawRulesTab(body);
                 }
-                    break;
+                    break; 
             }
 
             TryCacheItemsToSell();
@@ -155,7 +163,7 @@ namespace MGAutoSell
 #endif
         }
 
-        private void DrawTitle(Rect headerRect, bool showSettingsIcon = false)
+        private void DrawTitle(Rect headerRect, bool showIcons = false)
         {
             var color = GUI.color;
             headerRect.y -= 4;
@@ -170,12 +178,20 @@ namespace MGAutoSell
             Widgets.DrawLineHorizontal(headerRect.x, headerRect.yMax - 2, headerRect.width);
             GUI.color = color;
 
-            if (showSettingsIcon && Widgets.ButtonImage(
-                    headerRect.TopPartPixels(Text.LineHeight).RightPartPixels(Text.LineHeight),
-                    Textures.OptionsGeneral, _fadedColor))
+            if (!showIcons)
+                return;
+
+            var header = headerRect.TopPartPixels(Text.LineHeight);
+            header.SplitVerticallyWithMargin(out header, out var settingsRect, out _, rightWidth: Text.LineHeight, compressibleMargin: 4f);
+            if (Widgets.ButtonImage(settingsRect, Textures.OptionsGeneral, _fadedColor))
             {
                 tradersCache = GetTraders();
                 currentTab = WindowTab.Settings;
+            }
+            header.SplitVerticallyWithMargin(out header, out var historyRect, out _, rightWidth: Text.LineHeight, compressibleMargin: 4f);
+            if (Widgets.ButtonImage(historyRect, Textures.History, _fadedColor))
+            {
+                currentTab = WindowTab.History;
             }
         }
 
@@ -273,6 +289,27 @@ namespace MGAutoSell
                 listing.End();
         }
 
+        private void DrawHistoryTab(Rect panel)
+        {
+            var listing = new Listing_StandardIndent();
+            listing.BeginScrollView(panel, ref historyScroll, panel.LeftPartPixels(panel.width - 16).TopPartPixels(comp.Ledger.Count * 30).AtZero());
+            foreach (var tradeHistory in comp.Ledger)
+            {
+                var rect = listing.GetRect(30);
+                rect.SplitVerticallyWithMargin(out var title, out rect, 4f);
+                //title.SplitVerticallyWithMargin(out var icon, out title, out _, leftWidth: 30, compressibleMargin: 4f);
+
+                var faction = tradeHistory.Faction;
+                if (faction != null)
+                    Widgets.DefLabelWithIcon(title, faction.def);
+                else
+                    Widgets.Label(title, tradeHistory.TraderName);
+            }
+
+            var height = 0f;
+            listing.EndScrollView(ref height);
+        }
+
         private void DrawRulesTab(Rect panel)
         {
             var height = 300f;
@@ -346,162 +383,6 @@ namespace MGAutoSell
             controls.Label($"<i> Render: {previousRenderTime}</i>");
             GUI.color = color;
 #endif
-        }
-        
-        private void DrawSellPanel(Rect toSellRect)
-        {
-            toSellRect.SplitHorizontally(Text.LineHeight, out var itemHeader, out toSellRect);
-
-            Widgets.DrawLightHighlight(itemHeader);
-            Widgets.Label(itemHeader.RightPartPixels(itemHeader.width - Text.LineHeight - 10), sellHeader);
-            GUI.DrawTexture(itemHeader.RightPartPixels(24f), ThingDefOf.Silver.uiIcon);
-
-            toSellRect.SplitHorizontally(4, out var gapHeader, out toSellRect);
-            Widgets.DrawLineHorizontal(gapHeader.x, gapHeader.y, gapHeader.width, _fadedColor);
-
-            int i = -1;
-            var anchor = Text.Anchor;
-            var totalItems = sellCache.Items.Count + (Mod.Settings.showAllMatchingItems ? sellCache.PotentialItems.Count : 0);
-            var viewRect = toSellRect.TopPartPixels(toSellRect.height - Text.LineHeight);
-            var totalHeight = totalItems * Text.LineHeight;
-            var shouldScroll = totalHeight > viewRect.height;
-            var row = new Rect(0, 0, 0, 0);
-            var listing = new Listing_StandardIndent();
-            if(shouldScroll)
-            {
-                viewRect.width += 16;
-                listing.BeginScrollView(viewRect, ref sellScroll, viewRect.LeftPartPixels(viewRect.width - 16).TopPartPixels(totalHeight).AtZero() );
-            }
-
-            var minRenderIndex = shouldScroll ? Math.Floor(sellScroll.y / Text.LineHeight) : 0;
-            var maxRenderIndex = shouldScroll ? Math.Ceiling(viewRect.height / Text.LineHeight) + minRenderIndex : 0;
-            foreach (var (thingDef, count, (total, totalLabel), (pricePer, pricePerLabel)) in sellCache.Items)
-            {
-                i++;
-                if (shouldScroll)
-                {
-                    if(i < minRenderIndex || i > maxRenderIndex)
-                    {
-                        listing.Gap(Text.LineHeight);
-                        continue;
-                    }
-                    row = listing.GetRect(Text.LineHeight);
-                }
-                else
-                    viewRect.SplitHorizontally(Text.LineHeight, out row, out viewRect);
-
-                if (i % 2 == 1)
-                    Widgets.DrawLightHighlight(row);
-                var color = GUI.color;
-                GUI.color = thingDef.uiIconColor;
-                GUI.DrawTexture(row.LeftPartPixels(row.height), thingDef.uiIcon);
-                GUI.color = color;
-
-                row.x += row.height + 10;
-                Widgets.Label(row, thingDef.GetLabel() + $" x{count}");
-                row.x -= row.height + 10;
-
-                if (currentTab != WindowTab.Edit)
-                {
-                    var middle = row.MiddlePartPixels(50, row.height);
-                    Text.Anchor = TextAnchor.MiddleCenter;
-                    Widgets.Label(middle, pricePerLabel);
-                    Text.Anchor = anchor;
-                }
-
-                if (!Mod.Settings.LabelSizeCache.TryGetValue(totalLabel, out var size))
-                {
-                    size = Text.CalcSize(totalLabel);
-                    Mod.Settings.LabelSizeCache[totalLabel] = size;
-                }
-                Widgets.Label(row.RightPartPixels(size.x + 4), totalLabel);
-            }
-
-            if (Mod.Settings.showAllMatchingItems)
-            {
-                foreach (var potentialItem in sellCache.PotentialItems)
-                {
-                    i++;
-                    if (shouldScroll)
-                    {
-                        if (i < minRenderIndex || i > maxRenderIndex)
-                        {
-                            listing.Gap(Text.LineHeight);
-                            continue;
-                        }
-                        row = listing.GetRect(Text.LineHeight);
-                    }
-                    else
-                        viewRect.SplitHorizontally(Text.LineHeight, out row, out viewRect);
-
-                    if (i % 2 == 1)
-                        Widgets.DrawLightHighlight(row);
-
-                    var color = GUI.color;
-                    GUI.color = potentialItem.Item.uiIconColor;
-                    GUI.DrawTexture(row.LeftPartPixels(row.height), potentialItem.Item.uiIcon);
-                    GUI.color = _fadedColor;
-
-                    row.x += row.height + 10;
-                    Widgets.Label(row, potentialItem.Item.GetLabel());
-                    row.x -= row.height + 10;
-
-                    if (!Mod.Settings.LabelSizeCache.TryGetValue(potentialItem.Rule, out var size))
-                    {
-                        size = Text.CalcSize(potentialItem.Rule);
-                        Mod.Settings.LabelSizeCache[potentialItem.Rule] = size;
-                    }
-
-                    Widgets.Label(row.RightPartPixels(size.x), potentialItem.Rule);
-                    GUI.color = color;
-                }
-            }
-
-            if (shouldScroll)
-            {
-                var height = 0f;
-                listing.EndScrollView(ref height);
-            }
-
-            var footer = toSellRect.BottomPartPixels(Text.LineHeight);
-            Widgets.DrawLightHighlight(footer);
-
-            var iconRect = footer.LeftPartPixels(Text.LineHeight);
-            iconRect.y -= 4;
-            GUI.DrawTexture(iconRect, sellCache.Trader.Icon.Invoke());
-
-            var sellerLabel = sellCache.Trader.Name + $" ({sellCache.Trader.ImprovementLabel})";
-            if (SellerOverride != null)
-                sellerLabel = $"<i>{sellerLabel}</i>";
-
-            var sellerLabelWidth = Text.CalcSize(sellerLabel);
-            Widgets.Label(footer.RightPartPixels(footer.width - Text.LineHeight), sellerLabel);
-
-            var sellerOverrideRect = footer.LeftPartPixels(iconRect.width + sellerLabelWidth.x + 8);
-            Widgets.DrawHighlightIfMouseover(sellerOverrideRect);
-            if (Widgets.ButtonInvisible(sellerOverrideRect) && Event.current.button == (int)MouseButton.RightMouse)
-            {
-                var pawns = GetTraders().Select(x => new FloatMenuOption(
-                    x.Name + $" ({x.ImprovementLabel})", () =>
-                    {
-                        SellerOverride = x.Pawn;
-                        nextCache = 0;
-                    }, x.Pawn, Color.white)).ToList();
-
-                if (SellerOverride != null)
-                    pawns.Add(new FloatMenuOption("Auto", () =>
-                    {
-                        SellerOverride = null;
-                        nextCache = 0;
-                    }));
-
-                Find.WindowStack.Add(new FloatMenu(pawns));
-            }
-
-            var footerRow = new WidgetRow(footer.xMax - 4, footer.y, UIDirection.LeftThenDown);
-            footerRow.LabelFast(sellCache.TotalSilver.Label);
-            footerRow.Icon(ThingDefOf.Silver.uiIcon);
-            footerRow.LabelFast("Total:");
         }
 
         public void TryCacheItemsToSell(bool force = false)
@@ -655,7 +536,8 @@ namespace MGAutoSell
     {
         Rules = 0,
         Edit = 1,
-        Settings = 2
+        Settings = 2,
+        History
     }
 
 
