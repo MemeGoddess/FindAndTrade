@@ -14,6 +14,7 @@ using RimWorld;
 using RimWorld.Planet;
 using UnityEngine;
 using Verse;
+using static Unity.Burst.Intrinsics.X86.Avx;
 
 namespace MGAutoSell
 {
@@ -70,6 +71,7 @@ namespace MGAutoSell
             var pawn = Find.CurrentMap.mapPawns.PawnsInFaction(Faction.OfPlayer);
             var socialPawn = pawn.MaxBy(x => x.skills?.GetSkill(SkillDefOf.Social).Level);
             var ships = Find.CurrentMap.passingShipManager.passingShips;
+            var comp = Current.Game.GetComponent<TradeRulesGameComp>();
             StartGroupedTrading();
             foreach (var passingShip in ships)
             {
@@ -81,14 +83,14 @@ namespace MGAutoSell
 
                 var buy = deal.AllTradeables
                     .Where(x => x.CountToTransfer > 0 && !x.IsCurrency)
-                    .Select(x => (x.ThingDef.label, x.CountToTransfer))
+                    .Select(x => new TradedItem(x.ThingDef, x.GetPriceFor(TradeAction.PlayerBuys), x.CountToTransfer))
                     .ToList();
                 var sell = deal.AllTradeables
                     .Where(x => x.CountToTransfer < 0 && !x.IsCurrency)
-                    .Select(x => (x.ThingDef.label, x.CountToTransfer))
+                    .Select(x => new TradedItem(x.ThingDef, x.GetPriceFor(TradeAction.PlayerSells), x.CountToTransfer))
                     .ToList();
 
-                if(!buy.Any() && !sell.Any())
+                if (!buy.Any() && !sell.Any())
                     continue;
 
                 if (!deal.TryExecute(out var actuallyTraded)) 
@@ -97,7 +99,11 @@ namespace MGAutoSell
                 if(!actuallyTraded)
                     Debugger.Break();
 
-                DoLetter(passingShip as ITrader, socialPawn, deal, socialPawn.Position, buy, sell, silver);
+                if (passingShip is not ITrader trader)
+                    return;
+
+                DoLetter(trader, socialPawn, deal, socialPawn.Position, buy, sell, silver);
+                comp.Ledger.Add(new TradeHistory(trader, trader.Faction, buy, sell));
 
             }
             EndGroupedTrading();
@@ -121,11 +127,11 @@ namespace MGAutoSell
 
             var buy = deal.AllTradeables
                 .Where(x => x.CountToTransfer > 0 && !x.IsCurrency)
-                .Select(x => (x.ThingDef.label, x.CountToTransfer))
+                .Select(x => new TradedItem(x.ThingDef, x.GetPriceFor(TradeAction.PlayerBuys), x.CountToTransfer))
                 .ToList();
             var sell = deal.AllTradeables
                 .Where(x => x.CountToTransfer < 0 && !x.IsCurrency)
-                .Select(x => (x.ThingDef.label, x.CountToTransfer))
+                .Select(x => new TradedItem(x.ThingDef, x.GetPriceFor(TradeAction.PlayerSells), x.CountToTransfer))
                 .ToList();
 
             if (!buy.Any() && !sell.Any())
@@ -135,6 +141,7 @@ namespace MGAutoSell
                 return;
 
             DoLetter(trader, socialPawn, deal, socialPawn.Position, buy, sell, silver);
+            comp.Ledger.Add(new TradeHistory(trader, trader.Faction, buy, sell));
 
         }
 
@@ -176,11 +183,11 @@ namespace MGAutoSell
 
                     var buy = deal.AllTradeables
                         .Where(x => x.CountToTransfer > 0 && !x.IsCurrency)
-                        .Select(x => (x.ThingDef.label, x.CountToTransfer))
+                        .Select(x => new TradedItem(x.ThingDef, x.GetPriceFor(TradeAction.PlayerBuys), x.CountToTransfer))
                         .ToList();
                     var sell = deal.AllTradeables
                         .Where(x => x.CountToTransfer < 0 && !x.IsCurrency)
-                        .Select(x => (x.ThingDef.label, x.CountToTransfer))
+                        .Select(x => new TradedItem(x.ThingDef, x.GetPriceFor(TradeAction.PlayerSells), x.CountToTransfer))
                         .ToList();
 
                     if (!buy.Any() && !sell.Any())
@@ -189,7 +196,11 @@ namespace MGAutoSell
                     if (!deal.TryExecute(out var actuallyTraded))
                         continue;
 
-                    DoLetter(passingShip as ITrader, socialPawn, deal, socialPawn.Position, buy, sell, silver);
+                    if (passingShip is not ITrader trader)
+                        return;
+
+                    DoLetter(trader, socialPawn, deal, socialPawn.Position, buy, sell, silver);
+                    comp.Ledger.Add(new TradeHistory(trader, trader.Faction, buy, sell ));
                 }
             }
             finally
@@ -261,9 +272,6 @@ namespace MGAutoSell
             // Don't buy more medicine if there's literally heaps in the Hospital already...
             var itemsOnMap = map.listerThings.AllThings.Where(x => (!x.IsForbidden(Faction.OfPlayer) || x.Map.zoneManager.ZoneAt(x.Position) != null) & !x.Position.Fogged(x.Map)).ToList();
             tradeables.ForEach(x => x.thingsColony.ForEach(y => itemsOnMap.Remove(y)));
-            //var countsOnMap = itemsOnMap
-            //    .GroupBy(x => x.def)
-            //    .ToDictionary(x => x.Key, x => x.ToList().Sum(y => y.stackCount));
 
 
             foreach (var tradeable in tradeables)
@@ -532,8 +540,8 @@ namespace MGAutoSell
             Pawn pawn,
             TradeDeal deal,
             IntVec3 location,
-            List<(string label, int count)> buy,
-            List<(string label, int count)> sell,
+            List<TradedItem> buy,
+            List<TradedItem> sell,
             int silver)
         {
             if (!buy.Any() && !sell.Any())
@@ -545,11 +553,11 @@ namespace MGAutoSell
 
             var buyStringBuilder = new StringBuilder();
             buyStringBuilder.AppendLine(bought.Colorize(ColoredText.TipSectionTitleColor));
-            buyStringBuilder.AppendJoin("\n", buy.Select(x => $"  {x.label} x{Math.Abs(x.count)}"));
+            buyStringBuilder.AppendJoin("\n", buy.Select(x => $"  {x.ThingDef.label} x{Math.Abs(x.Count)}"));
 
             var sellStringBuilder = new StringBuilder();
             sellStringBuilder.AppendLine(sold.Colorize(ColoredText.TipSectionTitleColor));
-            sellStringBuilder.AppendJoin("\n", sell.Select(x => $"  {x.label} x{Math.Abs(x.count)}"));
+            sellStringBuilder.AppendJoin("\n", sell.Select(x => $"  {x.ThingDef.label} x{Math.Abs(x.Count)}"));
 
             var pawnName = pawn.Name.ToStringShort.Colorize(ColoredText.NameColor);
             var traderColor = (trader.Faction?.PlayerRelationKind ?? FactionRelationKind.Neutral).GetColor();
@@ -574,6 +582,8 @@ namespace MGAutoSell
             
             Find.LetterStack.ReceiveLetter("MGAutoSell.LetterTitle".Translate(traderName), body,
                 LetterDefOf.PositiveEvent, globalTargetInfo);
+
+
         }
     }
 }

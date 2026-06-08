@@ -31,8 +31,11 @@ namespace MGAutoSell
         public Dictionary<Map, Pawn> SellerOverride = [];
         public Dictionary<Map, TradeRoute> NextTradeRoute = [];
 
+        public List<TradeHistory> Ledger = new();
+
         private Queue<Map> cacheOrder = new();
-        private int tickWait => 2500 / UnityEngine.Mathf.Max(SellCache.Count, 1);
+
+        private int tickWait => 2500 / Mathf.Max(SellCache.Count, 1);
         private int nextTick = -1;
 
         public TradeRulesGameComp(Game game)
@@ -79,7 +82,6 @@ namespace MGAutoSell
 
             if (map == null)
                 return;
-
 
             try
             {
@@ -175,9 +177,12 @@ namespace MGAutoSell
             Scribe_Values.Look(ref autoTrade, nameof(autoTrade));
             Scribe_Collections.Look(ref autoTraderIDs, nameof(autoTraderIDs));
 
+            Scribe_Collections.Look(ref Ledger, nameof(Ledger));
+
             tradeRules ??= new();
             traders ??= new();
             autoTraderIDs ??= new();
+            Ledger ??= new();
         }
     }
 }
