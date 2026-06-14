@@ -11,6 +11,7 @@ using TD_Find_Lib;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Verse;
+using Verse.Noise;
 using static MGAutoSell.TabUtility;
 
 namespace MGAutoSell
@@ -291,23 +292,47 @@ namespace MGAutoSell
 
         private void DrawHistoryTab(Rect panel)
         {
+            var textHeight = Text.LineHeight;
             var listing = new Listing_StandardIndent();
-            listing.BeginScrollView(panel, ref historyScroll, panel.LeftPartPixels(panel.width - 16).TopPartPixels(comp.Ledger.Count * 30).AtZero());
-            foreach (var tradeHistory in comp.Ledger)
+            var shouldDoScroll = comp.Ledger.Count * textHeight > panel.height;
+            if (shouldDoScroll)
+                listing.BeginScrollView(panel, ref historyScroll, panel.LeftPartPixels(panel.width - 16).TopPartPixels(comp.Ledger.Count * textHeight).AtZero());
+            else
+                listing.Begin(panel);
+            for (var index = comp.Ledger.Count - 1; index >= 0; index--)
             {
-                var rect = listing.GetRect(30);
-                rect.SplitVerticallyWithMargin(out var title, out rect, 4f);
-                //title.SplitVerticallyWithMargin(out var icon, out title, out _, leftWidth: 30, compressibleMargin: 4f);
+                var tradeHistory = comp.Ledger[index];
+                var rect = listing.GetRect(textHeight);
+                if(Mouse.IsOver(rect))
+                    Widgets.DrawHighlight(rect);
+                else if (index % 2 != 0)
+                    Widgets.DrawLightHighlight(rect);
+                rect.SplitVerticallyWithMargin(out var title, out var right, 4f);
+                title.SplitVerticallyWithMargin(out var icon, out title, out _, leftWidth: textHeight,
+                    compressibleMargin: 4f);
 
                 var faction = tradeHistory.Faction;
                 if (faction != null)
-                    Widgets.DefLabelWithIcon(title, faction.def);
-                else
-                    Widgets.Label(title, tradeHistory.TraderName);
+                {
+                    if (!faction.def.colorSpectrum.NullOrEmpty())
+                        GUI.color = faction.def.colorSpectrum.FirstOrDefault();
+                    Widgets.DrawTextureFitted(icon, faction.def.FactionIcon, 1f, null);
+                    GUI.color = Color.white;
+                }
+
+                Widgets.Label(title, tradeHistory.TraderName);
+
+                Widgets.Label(right,
+                    GenDate.DateShortStringAt(GenDate.TickGameToAbs(tradeHistory.Tick),
+                        Find.WorldGrid.LongLatOf(Find.CurrentMap.Tile)));
+                Widgets.Label(right.RightPartPixels(tradeHistory.SilverSize), tradeHistory.SilverLabel);
             }
 
             var height = 0f;
-            listing.EndScrollView(ref height);
+            if(shouldDoScroll)
+                listing.EndScrollView(ref height);
+            else
+                listing.End();
         }
 
         private void DrawRulesTab(Rect panel)
@@ -316,8 +341,12 @@ namespace MGAutoSell
             var body = panel.TopPartPixels(panel.height - 30);
 
             var drawerListing = new Listing_StandardIndent();
-            drawerListing.BeginScrollView(body, ref listerScroll,
+            var shouldDoScroll = comp.tradeRules.Count * 30 > body.height;
+            if(shouldDoScroll)
+                drawerListing.BeginScrollView(body, ref listerScroll,
                 body.LeftPartPixels(body.width - 16).TopPartPixels(comp.tradeRules.Count * 30).AtZero());
+            else
+                drawerListing.Begin(body);
 
             if (Event.current.type == EventType.Repaint)
                 reorderID = ReorderableWidget.NewGroup(DoReorderSearch, ReorderableDirection.Vertical,
@@ -371,7 +400,10 @@ namespace MGAutoSell
 
             }
 
-            drawerListing.EndScrollView(ref height);
+            if(shouldDoScroll)
+                drawerListing.EndScrollView(ref height);
+            else
+                drawerListing.End();
 
             var controlsRect = panel.BottomPartPixels(Text.LineHeight);
             if (Widgets.ButtonImage(controlsRect.LeftPartPixels(Text.LineHeight), FindTex.GreyPlus))

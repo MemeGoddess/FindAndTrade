@@ -103,7 +103,7 @@ namespace MGAutoSell
                     return;
 
                 DoLetter(trader, socialPawn, deal, socialPawn.Position, buy, sell, silver);
-                comp.Ledger.Add(new TradeHistory(trader, trader.Faction, buy, sell));
+                comp.Ledger.Add(new TradeHistory(trader, trader.Faction, silver, buy, sell));
 
             }
             EndGroupedTrading();
@@ -141,7 +141,7 @@ namespace MGAutoSell
                 return;
 
             DoLetter(trader, socialPawn, deal, socialPawn.Position, buy, sell, silver);
-            comp.Ledger.Add(new TradeHistory(trader, trader.Faction, buy, sell));
+            comp.Ledger.Add(new TradeHistory(trader, trader.Faction, silver, buy, sell));
 
         }
 
@@ -200,7 +200,7 @@ namespace MGAutoSell
                         return;
 
                     DoLetter(trader, socialPawn, deal, socialPawn.Position, buy, sell, silver);
-                    comp.Ledger.Add(new TradeHistory(trader, trader.Faction, buy, sell ));
+                    comp.Ledger.Add(new TradeHistory(trader, trader.Faction, silver, buy, sell ));
                 }
             }
             finally
