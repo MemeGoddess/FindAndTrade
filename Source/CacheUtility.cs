@@ -202,7 +202,8 @@ namespace MGAutoSell
         {
             try
             {
-                return PawnGenerator.GeneratePawn(thing.race?.AnyPawnKind ?? null);
+                if (thing.race?.AnyPawnKind == null) return null;
+                return PawnGenerator.GeneratePawn(thing.race.AnyPawnKind);
             }
             catch (Exception ex)
             {
