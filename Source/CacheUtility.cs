@@ -202,11 +202,12 @@ namespace MGAutoSell
         {
             try
             {
+                if (thing.race?.AnyPawnKind == null) return null;
                 return PawnGenerator.GeneratePawn(thing.race.AnyPawnKind);
             }
             catch (Exception ex)
             {
-                Log.Error($"Failed to PawnGen '{thing.defName}' def\n{ex.Message}\n{ex.StackTrace}");
+                Log.Warning($"Failed to PawnGen '{thing.defName}' def\n{ex.Message}\n{ex.StackTrace}");
                 return null;
             }
         }
@@ -220,7 +221,7 @@ namespace MGAutoSell
             }
             catch (Exception ex)
             {
-                Log.Error($"Failed to ThingGen '{thing.defName}' def\n{ex.Message}\n{ex.StackTrace}");
+                Log.Warning($"Failed to ThingGen '{thing.defName}' def\n{ex.Message}\n{ex.StackTrace}");
                 return null;
             }
         }
