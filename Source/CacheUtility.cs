@@ -31,7 +31,7 @@ namespace MGAutoSell
         public static List<IGrouping<ThingDef, Thing>> GetJunk(this List<Thing> allItems)
         {
             var junk = allItems
-                .Where(x => x.Map.designationManager.DesignationOn(x, MGDesignatorDefOf.MGAutoSell) != null).ToList();
+                .Where(x => x.Map?.designationManager?.DesignationOn(x, MGDesignatorDefOf.MGAutoSell) != null).ToList();
             junk.ForEach(x => allItems.Remove(x));
             var junkGrouped = junk.GroupBy(x => x.def).ToList();
             return junkGrouped;
@@ -242,7 +242,10 @@ namespace MGAutoSell
                 (!x.IsForbidden(Faction.OfPlayer) || x.Map.zoneManager.ZoneAt(x.Position) != null) &&
                 !x.Position.Fogged(x.Map))
                 .ToList();
-            allItems.AddRange(TradeUtility.AllSellableColonyPawns(map, false).ToList());
+            allItems.AddRange(
+                TradeUtility.AllSellableColonyPawns(map, false)
+                .Where(x => x?.Map != null)
+                .ToList());
 
             if (withBenchmark)
                 RecordTime(ref timestamp, ref benchmarkAllItems);
