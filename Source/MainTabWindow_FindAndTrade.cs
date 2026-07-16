@@ -78,6 +78,7 @@ namespace MGAutoSell
         {
             base.PreOpen();
             comp = Current.Game.GetComponent<TradeRulesGameComp>();
+            comp.Fetch(Find.CurrentMap, true);
         }
 
         public override void PostClose()
@@ -304,29 +305,21 @@ namespace MGAutoSell
                     case TradeRuleAction.Delete:
                         comp.tradeRules.RemoveAt(index);
                         index--;
+                        sellCache = comp.Fetch(Find.CurrentMap, true);
                         break;
                     case TradeRuleAction.Edit:
                         DoEdit(tradeRule);
                         break;
                     case TradeRuleAction.Suspend:
                         tradeRule.Enabled = !tradeRule.Enabled;
-                        sellCache = sellCache with
-                        {
-                            PotentialItems = comp.tradeRules.GetPossibleItemsList(sellCache.Items)
-                        };
+                        sellCache = comp.Fetch(Find.CurrentMap, true);
                         break;
                     case TradeRuleAction.Mode:
                         tradeRule.Mode = tradeRule.Mode.Next();
-                        sellCache = sellCache with
-                        {
-                            PotentialItems = comp.tradeRules.GetPossibleItemsList(sellCache.Items)
-                        };
+                        sellCache = comp.Fetch(Find.CurrentMap, true);
                         break;
                     case TradeRuleAction.Refresh:
-                        sellCache = sellCache with
-                        {
-                            PotentialItems = comp.tradeRules.GetPossibleItemsList(sellCache.Items)
-                        };
+                        sellCache = comp.Fetch(Find.CurrentMap, true);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
