@@ -169,6 +169,8 @@ namespace MGAutoSell
 
         public override void ExposeData()
         {
+            traders?.RemoveWhere(x => x is not ILoadReferenceable);
+
             Scribe_Deep.Look(ref tradeRules, nameof(tradeRules));
             Scribe_Collections.Look(ref traders, nameof(traders), LookMode.Reference);
 

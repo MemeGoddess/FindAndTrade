@@ -116,7 +116,8 @@ namespace MGAutoSell
             TradeSession.SetupWith(trader, socialPawn, false);
             var deal = TradeSession.deal;
             DoTradeDeal(deal);
-            comp.traders.Add(trader);
+            if(trader is ILoadReferenceable)
+                comp.traders.Add(trader);
             var silver = deal.CurrencyTradeable.CountToTransfer;
 
             var buy = deal.AllTradeables

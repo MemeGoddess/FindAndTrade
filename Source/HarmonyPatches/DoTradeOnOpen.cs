@@ -17,7 +17,7 @@ namespace MGAutoSell.HarmonyPatches
 
                 TradeDealProcessor.DoTradeDeal(deal);
 
-                if (Mod.Settings.rememberManualTrade)
+                if (Mod.Settings.rememberManualTrade && TradeSession.trader is ILoadReferenceable)
                     Current.Game.GetComponent<TradeRulesGameComp>().traders.Add(TradeSession.trader);
             }
             catch (Exception ex)
