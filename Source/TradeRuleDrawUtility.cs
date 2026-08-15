@@ -29,7 +29,8 @@ namespace MGAutoSell
         public const int AnnoyingUnavoidableGap = 4;
 
         private static TaggedString TagInvalid, TagRange, TagBuy, TagBasically, TagExport, TagImport, TagMaintain, 
-            TTModeExport, TTModeImport,  TTModeMaintain, TTModeMultipleItems;
+            TTModeExport, TTModeImport,  TTModeMaintain, TTModeMultipleItems,
+            DeleteBillTip, SuspendBillTip, EditTip;
 
         static TradeRuleDrawUtility()
         {
@@ -52,6 +53,10 @@ namespace MGAutoSell
             TTModeImport =  TagImport + "\n\n" + "MGAutoSell.Tooltips.Mode.Import".Translate();
             TTModeMaintain = TagMaintain + "\n\n" + "MGAutoSell.Tooltips.Mode.Maintain".Translate();
             TTModeMultipleItems = "MGAutoSell.Tooltips.Mode.MultipleItems".Translate();
+
+            DeleteBillTip = "DeleteBillTip".Translate();
+            SuspendBillTip = "SuspendBillTip".Translate();
+            EditTip = "Edit".Translate();
         }
 
         public static TradeRuleAction DrawRow(Rect rowRect, TradeRule item, int i, ItemsToSell sellCache, int reorderId)
@@ -84,13 +89,13 @@ namespace MGAutoSell
                 left.LabelFast(item.search.name);
                 Text.Anchor = OGAnchor;
 
-                if (right.ButtonIcon(FindTex.Trash))
+                if (right.ButtonIcon(FindTex.Trash, DeleteBillTip))
                     response = TradeRuleAction.Delete;
 
-                if (right.ButtonIcon(FindTex.Edit))
+                if (right.ButtonIcon(FindTex.Edit, EditTip))
                     response = TradeRuleAction.Edit;
 
-                if (right.ButtonIcon(suspendTex))
+                if (right.ButtonIcon(suspendTex, SuspendBillTip))
                     response = TradeRuleAction.Suspend;
             }
 
