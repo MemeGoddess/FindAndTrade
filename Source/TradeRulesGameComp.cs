@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using MGAutoSell.Caravans;
 using MGAutoSell.Filter;
+using MGAutoSell.Records;
 using RimWorld;
 using RimWorld.Planet;
 using UnityEngine;

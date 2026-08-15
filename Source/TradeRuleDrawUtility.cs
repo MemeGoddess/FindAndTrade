@@ -6,6 +6,7 @@ using UnityEngine;
 using Verse;
 using Verse.Sound;
 using MGAutoSell.Extensions;
+using MGAutoSell.Records;
 
 namespace MGAutoSell
 {
@@ -27,7 +28,8 @@ namespace MGAutoSell
 
         public const int AnnoyingUnavoidableGap = 4;
 
-        private static TaggedString TagInvalid, TagRange, TagBuy, TagBasically, TagExport, TagImport, TagMaintain;
+        private static TaggedString TagInvalid, TagRange, TagBuy, TagBasically, TagExport, TagImport, TagMaintain, 
+            TTModeExport, TTModeImport,  TTModeMaintain, TTModeMultipleItems;
 
         static TradeRuleDrawUtility()
         {
@@ -45,6 +47,11 @@ namespace MGAutoSell
             TagExport = "MGAutoSell.Mode.Export".Translate();
             TagImport = "MGAutoSell.Mode.Import".Translate();
             TagMaintain = "MGAutoSell.Mode.Maintain".Translate();
+
+            TTModeExport = TagExport + "\n\n" + "MGAutoSell.Tooltips.Mode.Export".Translate();
+            TTModeImport =  TagImport + "\n\n" + "MGAutoSell.Tooltips.Mode.Import".Translate();
+            TTModeMaintain = TagMaintain + "\n\n" + "MGAutoSell.Tooltips.Mode.Maintain".Translate();
+            TTModeMultipleItems = "MGAutoSell.Tooltips.Mode.MultipleItems".Translate();
         }
 
         public static TradeRuleAction DrawRow(Rect rowRect, TradeRule item, int i, ItemsToSell sellCache, int reorderId)
@@ -92,7 +99,7 @@ namespace MGAutoSell
             {
                 if (invalidSell)
                     GUI.color = Invalid;
-                else if (Mod.Settings.colorRuleCountsOnWork && sellCache?.Rules?.TryGetValue(item, out var count) is true && count.max.Value > item.Export)
+                else if (Mod.Settings.colorRuleCountsOnWork && sellCache?.Rules?.TryGetValue(item, out var count) is true && count.Range.max.Value > item.Export)
                     GUI.color = ColorFromMode(item.Mode);
                 var before = item.Export;
 
@@ -130,8 +137,15 @@ namespace MGAutoSell
                     right.Gap(ArrowSize + AnnoyingUnavoidableGap);
 
                 string label = null;
-                if (Mod.Settings.showQuantityInsteadOfLabel && sellCache != null)
-                    label = sellCache.Rules?.TryGetValue(item, out var val) is true && val.max.Value > 0 ? GetModeString(val.min.Label, val.max.Label, LabelSize) : null;
+                string multipleItems = null;
+                if (Mod.Settings.showQuantityInsteadOfLabel && sellCache != null && sellCache.Rules?.TryGetValue(item, out var val) is true)
+                {
+                    label = val.Range.max.Value > 0
+                        ? GetModeString(val.Range.min.Label, val.Range.max.Label, LabelSize)
+                        : null;
+                    if (val.Range.min.Value != val.Range.max.Value)
+                        multipleItems = val.ItemsList;
+                }
                 label ??= StringFromMode(item.Mode);
                 right.Label(label, LabelSize);
 
@@ -144,6 +158,19 @@ namespace MGAutoSell
                 if (Mouse.IsOver(rect))
                 {
                     Widgets.DrawHighlight(rect);
+                    TooltipHandler.TipRegion(rect, () =>
+                    {
+                        var tooltip = item.Mode switch
+                        {
+                            TradeMode.Export => TTModeExport,
+                            TradeMode.Import => TTModeImport,
+                            TradeMode.Maintain => TTModeMaintain,
+                            _ => throw new NotImplementedException()
+                        };
+                        if (multipleItems != null)
+                            tooltip += "\n\n" + TTModeMultipleItems.Formatted(multipleItems);
+                        return tooltip;
+                    }, item.Hash);
                 }
 
                 if (DoClickWithoutBlocking(rect, item.Hash))
@@ -161,7 +188,7 @@ namespace MGAutoSell
                     GUI.color = Invalid;
                 else if (Mod.Settings.colorRuleCountsOnWork && item.Import > 0 &&
                          (sellCache?.Rules?.TryGetValue(item, out var count) is not true ||
-                          count.min.Value < item.Import))
+                          count.Range.min.Value < item.Import))
                     GUI.color = ColorFromMode(item.Mode);
 
                 var before = item.Import;
