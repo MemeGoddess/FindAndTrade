@@ -10,6 +10,7 @@ using Verse;
 using System.Diagnostics;
 using System.Threading;
 using JetBrains.Annotations;
+using MGAutoSell.Records;
 using UnityEngine;
 
 namespace MGAutoSell
@@ -118,7 +119,7 @@ namespace MGAutoSell
             return sellEntries;
         }
 
-        public static Dictionary<TradeRule, (ItemAndLabel<int>, ItemAndLabel<int>)> GetRuleCounts(
+        public static Dictionary<TradeRule, RuleUsage> GetRuleCounts(
             this Dictionary<TradeRule, List<Thing>> ruleDictionary)
         {
             if (!Mod.Settings.showQuantityInsteadOfLabel && !Mod.Settings.colorRuleCountsOnWork)
@@ -138,7 +139,9 @@ namespace MGAutoSell
                             ? max
                             : grouped.Min(x => x.Count);
 
-                        return (new ItemAndLabel<int>(min, "x" + min), new ItemAndLabel<int>(max, "x" + max));
+                        var range = (new ItemAndLabel<int>(min, "x" + min), new ItemAndLabel<int>(max, "x" + max));
+                        var ruleUsage = new RuleUsage(grouped, range);
+                        return ruleUsage;
                     });
         }
 
@@ -314,7 +317,7 @@ namespace MGAutoSell
                 TotalSilver: new ItemAndLabel<float>(totalSilver, totalSilver.ToStringMoney()),
                 Trader: trader,
                 Rules: ruleCounts);
-            sellCache.Rules.RemoveAll(x => x.Value.max.Value == 0);
+            sellCache.Rules.RemoveAll(x => x.Value.Range.max.Value == 0);
 
             if (withBenchmark)
                 RecordTime(ref timestamp, ref benchmarkBuildCache);

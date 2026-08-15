@@ -26,6 +26,11 @@
     <MGAutoSell.Mode.Import>Import</MGAutoSell.Mode.Import>
     <MGAutoSell.Mode.Maintain>Maintain</MGAutoSell.Mode.Maintain>
     
+    <MGAutoSell.Tooltips.Mode.Export>Sell items down to the upper limit when the trader has extra silver</MGAutoSell.Tooltips.Mode.Export>
+    <MGAutoSell.Tooltips.Mode.Import>Buy items up to the lower limit when you have extra silver</MGAutoSell.Tooltips.Mode.Import>
+    <MGAutoSell.Tooltips.Mode.Maintain>Buy or sell items to stay between the two limits when you have extra silver</MGAutoSell.Tooltips.Mode.Maintain>
+    <MGAutoSell.Tooltips.Mode.MultipleItems>Multiple items are selected for sale\n{0}</MGAutoSell.Tooltips.Mode.MultipleItems>
+    
     <MGAutoSell.Invalid>Invalid Rule:\n\n{0}</MGAutoSell.Invalid>
     <MGAutoSell.InvalidRange>This rule is invalid because you are trying to have at least {0}, and at most {1}.\nImport must be larger than Export.</MGAutoSell.InvalidRange>
     <MGAutoSell.InvalidBuy>This rule is invalid because you are trying to import {0}.</MGAutoSell.InvalidBuy>

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using MGAutoSell.Filter;
+using MGAutoSell.Records;
 using RimWorld;
 using TD_Find_Lib;
 using UnityEngine;
@@ -95,14 +96,14 @@ namespace MGAutoSell
             _showAllMatchItemsEnabled = new ItemsToSell(drugsActual, drugsPossible, drugsActual[0].Total, null, null);
             _showAllMatchItemsDisabled = new ItemsToSell(drugsActual, [], drugsActual[0].Total, null, null);
 
-            var itemRules = new Dictionary<TradeRule, (ItemAndLabel<int>, ItemAndLabel<int>)>();
+            var itemRules = new Dictionary<TradeRule, RuleUsage>();
             var steelTradeRule = new TradeRule("Steel")
             {
                 Import = 1000,
                 ImportBuffer = "1000",
                 Mode = TradeMode.Import
             };
-            itemRules[steelTradeRule] = (new ItemAndLabel<int>(900, "x900"), new ItemAndLabel<int>(900, "x900"));
+            itemRules[steelTradeRule] = new RuleUsage([new RuleRecord(ThingDefOf.Steel, 900)], (new ItemAndLabel<int>(900, "x900"), new ItemAndLabel<int>(900, "x900")));
             _exampleTradeRules.Add(steelTradeRule);
 
             var meals = new TradeRule("Meals")
@@ -111,7 +112,7 @@ namespace MGAutoSell
                 ImportBuffer = "20",
                 Mode = TradeMode.Import,
             };
-            itemRules[meals] = (new ItemAndLabel<int>(24, "x24"), new ItemAndLabel<int>(24, "x24"));
+            itemRules[meals] = new RuleUsage([new RuleRecord(ThingDefOf.MealSimple, 24)], (new ItemAndLabel<int>(24, "x24"), new ItemAndLabel<int>(24, "x24")));
             _exampleTradeRules.Add(meals);
 
             var pleasurableDrugs = new TradeRule("Pleasurable Drugs")
@@ -122,7 +123,7 @@ namespace MGAutoSell
                 Export = 30,
                 ExportBuffer = "30"
             };
-            itemRules[pleasurableDrugs] = (new ItemAndLabel<int>(4, "x4"), new ItemAndLabel<int>(31, "x31"));
+            itemRules[pleasurableDrugs] = new RuleUsage([new RuleRecord(ThingDefOf.Yayo, 4), new RuleRecord(ThingDefOf.Beer, 31)],(new ItemAndLabel<int>(4, "x4"), new ItemAndLabel<int>(31, "x31")));
             _exampleTradeRules.Add(pleasurableDrugs);
 
             var organs = new TradeRule("Organs")
@@ -131,7 +132,7 @@ namespace MGAutoSell
                 ExportBuffer = "0",
                 Mode = TradeMode.Export
             };
-            itemRules[organs] = (new ItemAndLabel<int>(2, "x2"), new ItemAndLabel<int>(2, "x2"));
+            itemRules[organs] = new RuleUsage([new RuleRecord(ThingDef.Named("Heart"), 2)], (new ItemAndLabel<int>(2, "x2"), new ItemAndLabel<int>(2, "x2")));
             _exampleTradeRules.Add(organs);
 
             var lowQualityArt = new TradeRule("Low Quality Art")
@@ -140,7 +141,7 @@ namespace MGAutoSell
                 ExportBuffer = "0",
                 Mode = TradeMode.Export
             };
-            itemRules[lowQualityArt] =  (new ItemAndLabel<int>(0, "x0"), new ItemAndLabel<int>(0, "x0"));
+            itemRules[lowQualityArt] = new RuleUsage([], (new ItemAndLabel<int>(0, "x0"), new ItemAndLabel<int>(0, "x0")));
             _exampleTradeRules.Add(lowQualityArt);
 
             _exampleTradeRulesCache = new ItemsToSell(null, null, null, null, itemRules);

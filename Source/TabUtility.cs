@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MGAutoSell.Extensions;
+using MGAutoSell.Records;
 using TD_Find_Lib;
 using UnityEngine.UIElements;
 using UnityEngine;

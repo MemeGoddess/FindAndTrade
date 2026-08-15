@@ -6,6 +6,7 @@ using HarmonyLib;
 using LudeonTK;
 using MGAutoSell.Extensions;
 using MGAutoSell.Filter;
+using MGAutoSell.Records;
 using RimWorld;
 using TD_Find_Lib;
 using UnityEngine;
@@ -15,22 +16,7 @@ using static MGAutoSell.TabUtility;
 
 namespace MGAutoSell
 {
-    public record ItemsToSell(
-        List<SellRecord> Items,
-        List<PotentialItem> PotentialItems,
 
-        ItemAndLabel<float> TotalSilver,
-        TraderRecord Trader,
-        Dictionary<TradeRule, (ItemAndLabel<int> min, ItemAndLabel<int> max)> Rules);
-
-    public record SellRecord(ThingDef Item, int Count, ItemAndLabel<float> Total, ItemAndLabel<float> Price);
-
-    public record TraderRecord(Pawn Pawn, string Name, Func<Texture> Icon, string ImprovementLabel, float Improvement, bool IsLeader);
-
-    public record RuleRecord(ThingDef Item, int Count);
-
-    public record PotentialItem(ThingDef Item, string Rule);
-    public record ItemAndLabel<T>(T Value, string Label);
 
     public class MainTabWindow_FindAndTrade : MainTabWindow
     {
