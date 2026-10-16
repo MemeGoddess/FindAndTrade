@@ -12,6 +12,7 @@ using TD_Find_Lib;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Verse;
+using Waylith.Input;
 using static MGAutoSell.TabUtility;
 
 namespace MGAutoSell
@@ -458,7 +459,7 @@ namespace MGAutoSell
 
             var sellerOverrideRect = footer.LeftPartPixels(iconRect.width + sellerLabelWidth.x + 8);
             Widgets.DrawHighlightIfMouseover(sellerOverrideRect);
-            if (Widgets.ButtonInvisible(sellerOverrideRect) && Event.current.button == (int)MouseButton.RightMouse)
+            if (Widgets.ButtonInvisible(sellerOverrideRect) && Event.current.button == (int)MouseButton.Right)
             {
                 var pawns = GetTraders().Select(x => new FloatMenuOption(
                     x.Name + $" ({x.ImprovementLabel})", () =>

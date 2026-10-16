@@ -1,34 +1,39 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net48</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <OutputType>Library</OutputType>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <GenerateDependencyFile>false</GenerateDependencyFile>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-        <OutputPath>..\1.6\Assemblies\</OutputPath>
         <LangVersion>latest</LangVersion>
         <AssemblyName>MGFindAndTrade</AssemblyName>
+        <Version>1.7</Version>
     </PropertyGroup>
-
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-        <DebugType>Embedded</DebugType>
+    <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+        <DebugSymbols>true</DebugSymbols>
+        <DebugType>portable</DebugType>
+        <Optimize>false</Optimize>
+        <OutputPath>..\$(Version)\Assemblies\</OutputPath>
+        <DefineConstants>DEBUG</DefineConstants>
+        <WarningLevel>4</WarningLevel>
+        <Prefer32Bit>false</Prefer32Bit>
+    </PropertyGroup>
+    <!-- Release configuration -->
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+        <DebugType>embedded</DebugType>
         <Optimize>true</Optimize>
-        <DefineConstants>TRACE</DefineConstants>
+        <OutputPath>..\$(Version)\Assemblies\</OutputPath>
         <WarningLevel>4</WarningLevel>
         <Prefer32Bit>false</Prefer32Bit>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.4633" />
+        <PackageReference Include="Krafs.Rimworld.Ref" Version="$(Version).*-*" />
+        <PackageReference Include="MemeGoddess.RimWorld.TDFindLib" Version="*"/>
         <PackageReference Include="Lib.Harmony" Version="2.4.1">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
         <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
-    </ItemGroup>
-    <ItemGroup>
-        <Reference Include="TD_Find_Lib">
-            <HintPath>..\Workshop\steamapps\workshop\content\294100\3529443295\1.6\Assemblies\TD_Find_Lib.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
     </ItemGroup>
 </Project>
