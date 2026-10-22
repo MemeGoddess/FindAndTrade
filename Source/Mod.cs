@@ -1,4 +1,5 @@
-﻿using HarmonyLib;
+﻿using System.Reflection;
+using HarmonyLib;
 using MGAutoSell.Query;
 using UnityEngine;
 using Verse;
@@ -23,7 +24,7 @@ namespace MGAutoSell
 
             LongEventHandler.ExecuteWhenFinished(() => Settings.Init());
             var harmony = new Harmony(content.PackageId);
-            harmony.PatchAll();
+            harmony.PatchAll(Assembly.GetExecutingAssembly());
         }
 
         public override void DoSettingsWindowContents(Rect inRect)
