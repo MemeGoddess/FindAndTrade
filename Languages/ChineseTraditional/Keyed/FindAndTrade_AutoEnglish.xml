@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+	<MGAutoSell.AggByDef>依ThingDef計數</MGAutoSell.AggByDef>
+	<MGAutoSell.AggByRule>依規則計數</MGAutoSell.AggByRule>
+
+	<MGAutoSell.Earned>賺得</MGAutoSell.Earned>
+	<MGAutoSell.Spent>花費</MGAutoSell.Spent>
+
+	<MGAutoSell.Bought>\n\n購入的物品：</MGAutoSell.Bought>
+	<MGAutoSell.Sold>\n\n售出的物品：</MGAutoSell.Sold>
+
+	<MGAutoSell.LetterTitle>與{0}完成交易</MGAutoSell.LetterTitle>
+	<!-- Pawn, Trader Ship/Faction, Silver, earned/spent, Buy, Sell -->
+	<MGAutoSell.Letter>{0}與{1}完成了交易。\n共{3} {2}。{4}{5}</MGAutoSell.Letter>
+
+	<MGAutoSell.RuleInvalid>此規則無效：最小值大於最大值。</MGAutoSell.RuleInvalid>
+
+	<MGAutoSell.Title>尋找／交易</MGAutoSell.Title>
+	<MGAutoSell.AutoSellToggle>自動交易</MGAutoSell.AutoSellToggle>
+
+	<MGAutoSell.JunkDesignator>標記出售</MGAutoSell.JunkDesignator>
+
+	<MGAutoSell.NameForNew>交易規則</MGAutoSell.NameForNew>
+	<MGAutoSell.NewTradeRule>新規則名稱</MGAutoSell.NewTradeRule>
+
+	<MGAutoSell.Mode.Export>售出</MGAutoSell.Mode.Export>
+	<MGAutoSell.Mode.Import>購入</MGAutoSell.Mode.Import>
+	<MGAutoSell.Mode.Maintain>維持</MGAutoSell.Mode.Maintain>
+
+	<MGAutoSell.Tooltips.Mode.Export>商人有多餘白銀時，賣出物品直到數量降至上限。</MGAutoSell.Tooltips.Mode.Export>
+	<MGAutoSell.Tooltips.Mode.Import>你有多餘白銀時，購入物品直到數量達到下限。</MGAutoSell.Tooltips.Mode.Import>
+	<MGAutoSell.Tooltips.Mode.Maintain>你有多餘白銀時，買進或賣出物品，讓數量維持在上下限之間。</MGAutoSell.Tooltips.Mode.Maintain>
+	<MGAutoSell.Tooltips.Mode.MultipleItems>選取了多種要出售的物品\n{0}</MGAutoSell.Tooltips.Mode.MultipleItems>
+
+	<MGAutoSell.Invalid>無效的規則：\n\n{0}</MGAutoSell.Invalid>
+	<MGAutoSell.InvalidRange>此規則無效：你要求至少保有{0}個，但最多只能有{1}個。\n購入下限不能大於售出上限。</MGAutoSell.InvalidRange>
+	<MGAutoSell.InvalidBuy>此規則無效，因為它會嘗試購入{0}。</MGAutoSell.InvalidBuy>
+	<MGAutoSell.Basically>這條維持規則的{1}數量不大於0，實際上等同於{0}規則。</MGAutoSell.Basically>
+
+	<MGAutoSell.SellHeader>物品</MGAutoSell.SellHeader>
+
+	<MGAutoSell.Caravan.AutomaticallyTradeLabel>自動交易</MGAutoSell.Caravan.AutomaticallyTradeLabel>
+	<MGAutoSell.Caravan.AutomaticallyTradeDescription>啟用後，會依照規則自動派遣旅隊或太空梭前往這個據點交易。</MGAutoSell.Caravan.AutomaticallyTradeDescription>
+
+	<MGAutoSell.Settings.Benchmark>效能測試</MGAutoSell.Settings.Benchmark>
+	<MGAutoSell.Settings.BenchmarkDisabled>載入存檔或地圖後才能進行效能測試。</MGAutoSell.Settings.BenchmarkDisabled>
+	<MGAutoSell.Settings.BenchmarkDisabledNoDev>啟用開發者模式後才能進行效能測試。</MGAutoSell.Settings.BenchmarkDisabledNoDev>
+
+	<MGAutoSell.Settings.scanEveryStackLabel>掃描每一堆物品</MGAutoSell.Settings.scanEveryStackLabel>
+	<MGAutoSell.Settings.scanEveryStackTooltip>掃描地圖上的每一堆物品，而不是每個交易列只看第一件。可以做更細的判斷（例如只賣出快腐壞的食物），但會比較耗效能。</MGAutoSell.Settings.scanEveryStackTooltip>
+
+	<MGAutoSell.Settings.rememberManualTradeLabel>手動交易後標記商人</MGAutoSell.Settings.rememberManualTradeLabel>
+	<MGAutoSell.Settings.rememberManualTradeTooltip>手動交易時標記對方，之後就不會再自動與他們交易。</MGAutoSell.Settings.rememberManualTradeTooltip>
+
+	<MGAutoSell.Settings.showAllMatchingItemsLabel>顯示所有符合的ThingDef</MGAutoSell.Settings.showAllMatchingItemsLabel>
+	<MGAutoSell.Settings.showAllMatchingItemsTooltip>顯示所有符合交易規則的物品，而不只是要出售的物品。\n\n規則變更時，該規則的清單會重新產生。</MGAutoSell.Settings.showAllMatchingItemsTooltip>
+
+	<MGAutoSell.Settings.showQuantityInsteadOfLabelLabel>顯示數量而非標籤</MGAutoSell.Settings.showQuantityInsteadOfLabelLabel>
+	<MGAutoSell.Settings.showQuantityInsteadOfLabelTooltip>顯示物品數量，而不是模式標籤。</MGAutoSell.Settings.showQuantityInsteadOfLabelTooltip>
+
+	<MGAutoSell.Settings.colorRuleCountsOnWorkLabel>依數量為購入／售出欄位上色</MGAutoSell.Settings.colorRuleCountsOnWorkLabel>
+	<MGAutoSell.Settings.colorRuleCountsOnWorkTooltip>依照規則在下次交易時是否會有動作，為購入／售出欄位上色。</MGAutoSell.Settings.colorRuleCountsOnWorkTooltip>
+
+	<MGAutoSell.Settings.showMinMaxLabelWhereApplicableLabel>適用時顯示最小／最大值</MGAutoSell.Settings.showMinMaxLabelWhereApplicableLabel>
+	<MGAutoSell.Settings.showMinMaxLabelWhereApplicableTooltip>顯示數量而非標籤時，若規則依ThingDef計數、最小值不等於最大值，且空間足夠，就以最小／最大數量作為標籤。</MGAutoSell.Settings.showMinMaxLabelWhereApplicableTooltip>
+</LanguageData>
